@@ -15,7 +15,15 @@ import steganography
 import t5_unlock
 import ai_gen
 
-app = FastAPI(title="Nivasha Security Engine")
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await database.init_db()
+    await database.seed_demo_data()
+    yield
+
+app = FastAPI(title="Nivasha Security Engine", lifespan=lifespan)
 
 # CORS setup
 app.add_middleware(
@@ -76,13 +84,6 @@ class SecurityEventRequest(BaseModel):
 class SubmitRequest(BaseModel):
     student_uuid: str
     answers: Dict[str, str]
-
-# --- Startup ---
-
-@app.on_event("startup")
-async def startup_event():
-    await database.init_db()
-    await database.seed_demo_data()
 
 # --- WebSocket ---
 
