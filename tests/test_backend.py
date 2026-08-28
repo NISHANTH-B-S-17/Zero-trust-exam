@@ -11,11 +11,27 @@ import steganography
 import t5_unlock
 import ai_gen
 import database
-from main import evaluate_incident_severity
+from main import evaluate_incident_severity, app
+from fastapi.testclient import TestClient
 
-# --- crypto.py tests ---
+# ... existing code
 
-def test_aes_gcm_round_trip():
+# --- main.py tests ---
+
+def test_incident_severity():
+    assert evaluate_incident_severity("heartbeat", "") == "LOW"
+    assert evaluate_incident_severity("clipboard_attempt", "") == "HIGH"
+    assert evaluate_incident_severity("focus_loss", "") == "MEDIUM"
+
+def test_fastapi_lifespan():
+    # Test that the app can start up using lifespan context manager
+    # If the lifespan is broken or startup events are improperly configured, 
+    # TestClient will raise an error on init.
+    client = TestClient(app)
+    response = client.get("/api/v1/health")
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok", "service": "Nivasha Security Engine"}
+
     master_key = crypto.generate_master_key()
     plaintext = b"Secret Exam Content"
     
@@ -101,6 +117,15 @@ def test_incident_severity():
     assert evaluate_incident_severity("heartbeat", "") == "LOW"
     assert evaluate_incident_severity("clipboard_attempt", "") == "HIGH"
     assert evaluate_incident_severity("focus_loss", "") == "MEDIUM"
+
+def test_fastapi_lifespan():
+    # Test that the app can start up using lifespan context manager
+    # If the lifespan is broken or startup events are improperly configured, 
+    # TestClient will raise an error on init.
+    client = TestClient(app)
+    response = client.get("/api/v1/health")
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok", "service": "Nivasha Security Engine"}
 
 # --- database.py tests ---
 

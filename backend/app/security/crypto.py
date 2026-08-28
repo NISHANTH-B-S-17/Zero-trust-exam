@@ -24,14 +24,11 @@ def encrypt_payload(plaintext: bytes, master_key: bytes) -> bytes:
     """Encrypt payload using AES-256-GCM with envelope layout."""
     salt = os.urandom(16)
     nonce = os.urandom(12)
-    
-    # Derive encryption key from master key and salt
     encryption_key = derive_key(master_key, salt)
     
     aesgcm = AESGCM(encryption_key)
     ciphertext = aesgcm.encrypt(nonce, plaintext, associated_data=MAGIC_HEADER)
     
-    # Envelope: MAGIC_HEADER (5) + salt (16) + nonce (12) + ciphertext
     return MAGIC_HEADER + salt + nonce + ciphertext
 
 def decrypt_payload(envelope: bytes, master_key: bytes) -> bytes:
@@ -51,14 +48,11 @@ def decrypt_payload(envelope: bytes, master_key: bytes) -> bytes:
     aesgcm = AESGCM(encryption_key)
     
     try:
-        plaintext = aesgcm.decrypt(nonce, ciphertext, associated_data=MAGIC_HEADER)
-        return plaintext
+        return aesgcm.decrypt(nonce, ciphertext, associated_data=MAGIC_HEADER)
     except InvalidTag:
         raise ValueError("Invalid payload: wrong key or tampered ciphertext")
 
 def secure_wipe(key_bytes: bytearray) -> None:
-    """Zero out key bytes in memory. (Note: standard Python 'bytes' are immutable,
-    so this works on mutable structures like bytearrays. We do a best-effort clear)."""
     if isinstance(key_bytes, bytearray):
         for i in range(len(key_bytes)):
             key_bytes[i] = 0
