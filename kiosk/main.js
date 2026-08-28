@@ -20,8 +20,12 @@ function checkVM(callback) {
                    output.includes('hyper-v') ||
                    output.includes('innotek'); // VirtualBox manufacturer
       
-      if (isVM) {
+      if (isVM && process.env.NIVASHA_STRICT_VM === '1') {
         console.error('Virtual Machine detected. Kiosk cannot run in a VM.');
+        app.quit();
+        return;
+      } else if (isVM) {
+        console.warn('Virtual Machine detected, but strict mode disabled. Proceeding in demo mode.');
       }
       callback(isVM);
     });
@@ -55,10 +59,12 @@ function createWindow() {
   // Loopback Network Isolation
   session.defaultSession.webRequest.onBeforeRequest((details, callback) => {
     const url = details.url;
-    // Allow localhost, 127.0.0.1, and local files
+    // Allow localhost, 127.0.0.1, local files, and Google Fonts
     if (url.startsWith('http://127.0.0.1:8080') || 
         url.startsWith('http://localhost:8080') || 
-        url.startsWith('file://')) {
+        url.startsWith('file://') ||
+        url.startsWith('https://fonts.googleapis.com') ||
+        url.startsWith('https://fonts.gstatic.com')) {
       callback({ cancel: false });
     } else {
       console.warn(`Blocked request to: ${url}`);
@@ -116,14 +122,6 @@ function registerShortcuts() {
 
 app.whenReady().then(() => {
   checkVM((isVM) => {
-    if (isVM) {
-      // Create a temporary window just to show the error if we wanted, 
-      // or just exit. For security, exit.
-      // dialog module could be used here, but we want to keep it simple.
-      app.quit();
-      return;
-    }
-    
     createWindow();
     registerShortcuts();
 

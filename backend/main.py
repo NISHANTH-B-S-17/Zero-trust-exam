@@ -6,8 +6,8 @@ import uuid
 import hashlib
 from typing import Dict, Any, List
 
-from .steganography import apply_layer1
-from .database import get_db, log_event
+from steganography import apply_layer1
+from database import get_db, log_event
 
 app = FastAPI(title="Nivasha Security Node")
 
@@ -124,4 +124,4 @@ async def submit_exam(req: SubmitRequest, db = Depends(get_db)):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("backend.main:app", host="127.0.0.1", port=8080, reload=True)
+    uvicorn.run("main:app", host="127.0.0.1", port=8080, reload=True)
