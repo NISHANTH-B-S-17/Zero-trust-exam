@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZERO TRUST EXAM ENGINE</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="connection-banner" class="banner hidden">
+        ⚠️ Backend connection lost. Autosaving locally. Please do not close the application.
+    </div>
+
+    <!-- Global Header -->
+    <header class="global-header">
+        <div class="logo-area">
+            <div class="logo-square">N</div>
+            <span class="logo-text">ZERO TRUST EXAM ENGINE</span>
+        </div>
+        <div class="header-actions">
+            <div class="timer hidden" id="live-timer">00:00:00</div>
+            <button id="header-submit-btn" class="btn primary-btn sm hidden">Submit Exam</button>
+        </div>
+    </header>
+
+    <!-- Login View -->
+    <div id="login-view" class="view active">
+        <div class="login-container">
+            <div class="back-link">← Back to Portal</div>
+            <h1>Student Examination</h1>
+            <p class="subtitle">Enter your Candidate UUID to begin your secured, timed examination session.</p>
+            
+            <div class="warning-box">
+                Your exam paper is uniquely watermarked. Do not share your screen or copy questions.
+            </div>
+
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="uuid">CANDIDATE UUID</label>
+                    <input type="text" id="uuid" class="mono-input" placeholder="550e8400-e29b-41d4-a716-446655440000" required autocomplete="off" spellcheck="false">
+                </div>
+                
+                <div id="login-error" class="error-text hidden">Authentication failed. Check UUID or backend connection.</div>
+                
+                <button type="submit" class="btn primary-btn block-btn">Start Examination</button>
+            </form>
+            
+            <div class="status-footer">
+                <span id="conn-status" class="dot green"></span>
+                <span id="conn-text">Connected to local security node · 127.0.0.1:8080</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Exam View -->
+    <div id="exam-view" class="view hidden">
+        <div class="progress-bar-container">
+            <div class="progress-bar" id="progress-bar" style="width: 0%"></div>
+        </div>
+        <main class="exam-main">
+            <div class="question-card">
+                <div class="question-header">
+                    <div class="chips">
+                        <span class="chip" id="q-counter">Q1 / 10</span>
+                        <span class="chip" id="q-subject">Subject</span>
+                        <span class="chip" id="q-topic">Topic</span>
+                        <span class="chip" id="q-difficulty">Difficulty</span>
+                    </div>
+                </div>
+                
+                <div class="question-content" id="q-text">
+                    Loading question...
+                </div>
+                
+                <!-- Anti-leak watermark underlay -->
+                <div id="watermark-overlay" class="watermark"></div>
+
+                <div class="answer-area" id="answer-area">
+                    <!-- Dynamic content -->
+                </div>
+
+                <div class="action-bar">
+                    <div class="left-actions">
+                        <button id="btn-prev" class="btn outline-btn">← Previous</button>
+                        <button id="btn-clear" class="btn text-btn hidden">Clear Answer</button>
+                    </div>
+                    <div class="right-actions">
+                        <button id="btn-flag" class="btn outline-btn warning">Mark for Review</button>
+                        <button id="btn-next" class="btn primary-btn">Next →</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Minimal palette below card -->
+            <div class="minimal-palette" id="minimal-palette">
+                <!-- Dots generated here -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Receipt Modal -->
+    <div id="receipt-modal" class="modal hidden">
+        <div class="modal-content dark-modal">
+            <div class="success-icon">✓</div>
+            <h2>Submission Accepted</h2>
+            <div class="receipt-details">
+                <div class="receipt-row">
+                    <span>Status:</span> <span class="badge success">RECEIVED</span>
+                </div>
+                <div class="receipt-row hidden" id="score-row">
+                    <span>Score:</span> <span id="receipt-score">--</span>
+                </div>
+                <div class="receipt-row">
+                    <span>Timestamp:</span> <span id="receipt-time">--</span>
+                </div>
+                <div class="receipt-hash-box">
+                    <div class="hash-label">RECEIPT HASH</div>
+                    <div class="hash-value" id="receipt-hash">Generating...</div>
+                </div>
+            </div>
+            <p class="warning-text">Wait for the invigilator before exiting the kiosk.</p>
+            <button id="exit-btn" class="btn outline-btn block-btn">Exit Terminal</button>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
