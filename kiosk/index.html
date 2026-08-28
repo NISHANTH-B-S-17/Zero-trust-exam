@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nivasha - Student Kiosk</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Using local fonts or system fonts instead of external CDNs for security -->
+</head>
+<body>
+    <div id="connection-banner" class="banner hidden">
+        ⚠️ Backend connection lost. Autosaving locally. Please do not close the application.
+    </div>
+
+    <!-- Login View -->
+    <div id="login-view" class="view active">
+        <div class="login-container">
+            <div class="logo">
+                <div class="shield">🛡️</div>
+                <h1>Nivasha Security Shell</h1>
+                <p>Zero-Trust Exam Environment</p>
+            </div>
+            
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="roll-number">Roll Number / Candidate ID *</label>
+                    <input type="text" id="roll-number" required autocomplete="off">
+                </div>
+                
+                <div class="form-group">
+                    <label for="candidate-name">Full Name (Optional)</label>
+                    <input type="text" id="candidate-name" autocomplete="off">
+                </div>
+
+                <div class="form-group">
+                    <label for="seat-number">Seat Number (Optional)</label>
+                    <input type="text" id="seat-number" autocomplete="off">
+                </div>
+                
+                <div id="login-error" class="error-text hidden">Authentication failed. Check details.</div>
+                
+                <button type="submit" class="btn primary-btn">Begin Assessment</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Exam View -->
+    <div id="exam-view" class="view hidden">
+        <header class="exam-header">
+            <div class="candidate-info">
+                <span id="header-name">Candidate Name</span> | 
+                <span id="header-roll">Roll: XXXX</span> | 
+                <span id="header-seat">Seat: YYY</span>
+            </div>
+            <div class="exam-controls">
+                <div class="status-indicator">
+                    <span id="conn-status" class="dot green"></span>
+                    <span id="conn-text">Connected</span>
+                </div>
+                <div class="timer" id="live-timer">00:00:00</div>
+                <button id="header-submit-btn" class="btn danger-btn sm">Finish Exam</button>
+            </div>
+        </header>
+
+        <div class="exam-layout">
+            <main class="question-area">
+                <div class="question-header">
+                    <h2 id="q-number">Question 1</h2>
+                    <span id="q-meta" class="tag">Subject - Difficulty</span>
+                </div>
+                
+                <div class="question-content" id="q-text">
+                    Loading question...
+                </div>
+                
+                <div id="watermark-overlay" class="watermark"></div>
+
+                <div class="answer-area" id="answer-area">
+                    <!-- Dynamic content: Multiple choice options or numerical input -->
+                </div>
+
+                <div class="action-bar">
+                    <button id="btn-prev" class="btn outline-btn">Previous</button>
+                    <button id="btn-flag" class="btn outline-btn warning">Flag for Review</button>
+                    <button id="btn-next" class="btn primary-btn">Next</button>
+                </div>
+            </main>
+
+            <aside class="question-palette">
+                <h3>Question Palette</h3>
+                <div class="palette-legend">
+                    <span class="legend-item"><span class="box answered"></span> Answered</span>
+                    <span class="legend-item"><span class="box unvisited"></span> Unvisited</span>
+                    <span class="legend-item"><span class="box visited"></span> Visited</span>
+                    <span class="legend-item"><span class="box flagged"></span> Flagged</span>
+                </div>
+                <div class="palette-grid" id="palette-grid">
+                    <!-- Dynamic grid items -->
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <!-- Receipt Modal -->
+    <div id="receipt-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="success-icon">✓</div>
+            <h2>Exam Submitted Successfully</h2>
+            <div class="receipt-details">
+                <p><strong>Receipt Hash:</strong> <span id="receipt-hash">Generating...</span></p>
+                <p><strong>Timestamp:</strong> <span id="receipt-time">--</span></p>
+                <p id="score-container" class="hidden"><strong>Score:</strong> <span id="receipt-score">--</span></p>
+            </div>
+            <p class="warning-text">Wait for the invigilator before closing.</p>
+            <button id="exit-btn" class="btn primary-btn">Exit Secure Shell</button>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
