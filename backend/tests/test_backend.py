@@ -127,3 +127,35 @@ def test_submission_receipt(test_client):
     response = test_client.post("/api/v1/student/submit", json=payload)
     assert response.status_code == 200
     assert "receipt_hash" in response.json()
+
+# 15. Unauthorized admin request is rejected
+def test_unauthorized_admin_rejected(test_client):
+    # Missing header
+    response = test_client.get("/api/v1/admin/dashboard")
+    assert response.status_code == 422 # FastAPI missing header validation
+    
+    # Invalid header
+    response = test_client.get("/api/v1/admin/dashboard", headers={"x-admin-token": "invalid-token"})
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Invalid admin token"
+
+# 16. Sensitive secrets are not returned in API responses
+def test_no_sensitive_secrets_in_responses(test_client):
+    response = test_client.get("/api/v1/student/fetch-paper?student_uuid=demo-uuid-1234")
+    paper_str = str(response.json())
+    # Should not contain master keys or explicit token files
+    assert "admin_token" not in paper_str.lower()
+    assert "master_key" not in paper_str.lower()
+
+# 17. No duplicate questions in one paper
+def test_no_duplicate_questions(test_client):
+    response = test_client.get("/api/v1/student/fetch-paper?student_uuid=demo-uuid-1234")
+    paper = response.json()["paper"]
+    question_ids = [q["id"] for q in paper]
+    assert len(question_ids) == len(set(question_ids))
+
+# 18. OpenAPI Schema loads
+def test_openapi_schema_loads(test_client):
+    response = test_client.get("/openapi.json")
+    assert response.status_code == 200
+    assert "paths" in response.json()
