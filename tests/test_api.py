@@ -51,4 +51,8 @@ def test_read_question_decrypted(client):
 
     response = client.get(f"/questions/{new_q_id}", headers={"x-user-id": "2"})
     assert response.status_code == 200
-    assert response.json()["content"] == "What is 2+2?"
+    
+    # We strip zero-width characters that might have been added by the forensics engine
+    content = response.json()["content"]
+    content = content.replace("\u200B", "").replace("\u200C", "").replace("\u200D", "")
+    assert content == "What is 2+2?"
