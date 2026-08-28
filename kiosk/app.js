@@ -59,8 +59,12 @@ function initApp() {
     document.getElementById('btn-next').addEventListener('click', () => navigate(1));
     document.getElementById('btn-prev').addEventListener('click', () => navigate(-1));
     document.getElementById('btn-flag').addEventListener('click', toggleFlag);
-    document.getElementById('header-submit-btn').addEventListener('click', finalSubmit);
-    document.getElementById('exit-btn').addEventListener('click', () => window.close());
+    document.getElementById('btn-clear').addEventListener('click', clearAnswer);
+    document.getElementById('header-submit-btn').addEventListener('click', () => finalSubmit(false));
+    document.getElementById('exit-btn').addEventListener('click', () => {
+        if(window.electronAPI) window.close();
+        else location.reload();
+    });
     
     // Clipboard prevention
     document.addEventListener('copy', (e) => { e.preventDefault(); handleSecurityEvent('clipboard_attempt_copy'); });
@@ -75,21 +79,19 @@ function initApp() {
 
 async function handleLogin(e) {
     e.preventDefault();
-    const roll = document.getElementById('roll-number').value;
-    const name = document.getElementById('candidate-name').value;
-    const seat = document.getElementById('seat-number').value;
+    const uuid = document.getElementById('uuid').value.trim();
     
     try {
         const res = await fetch(`${API_BASE}/authenticate`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ roll_number: roll, name, seat_number: seat })
+            body: JSON.stringify({ roll_number: uuid })
         });
         
         if (!res.ok) throw new Error('Auth failed');
         
         const data = await res.json();
-        state.uuid = data.uuid || roll; // fallback to roll if backend doesn't send uuid
+        state.uuid = data.uuid || uuid; // fallback to uuid if backend doesn't send it
         state.token = data.token || 'dummy-token';
         
         await fetchPaper();
@@ -98,9 +100,9 @@ async function handleLogin(e) {
         document.getElementById('login-error').classList.remove('hidden');
         
         // Mock fallback for testing if backend is down
-        if (err.message === 'Failed to fetch') {
-            console.warn("Backend down. Generating mock paper for development.");
-            state.uuid = roll;
+        if (err.message === 'Failed to fetch' || err.message === 'Auth failed') {
+            console.warn("Backend down or auth failed. Generating mock paper for demo.");
+            state.uuid = uuid;
             generateMockPaper();
             startExam();
         }
@@ -136,11 +138,11 @@ async function fetchPaper() {
 
 function generateMockPaper() {
     state.paper = {
-        title: "Sample Assessment",
+        title: "Standard Assessment",
         questions: [
-            { id: "q1", type: "mcq", text: "What is the capital of France?", options: ["London", "Berlin", "Paris", "Madrid"], metadata: "Geography - Easy" },
-            { id: "q2", type: "mcq", text: "Which protocol is used for secure communication over the internet?", options: ["HTTP", "FTP", "HTTPS", "SMTP"], metadata: "Security - Medium" },
-            { id: "q3", type: "numerical", text: "Calculate 25 * 4", metadata: "Math - Easy" }
+            { id: "q1", type: "mcq", text: "A car accelerates uniformly from rest to a speed of 20 m/s in 5 seconds. What is the acceleration of the car?", options: ["2 m/s²", "4 m/s²", "10 m/s²", "15 m/s²"], metadata: "Physics|Kinematics|Easy" },
+            { id: "q2", type: "mcq", text: "Which protocol is used for secure communication over the internet?", options: ["HTTP", "FTP", "HTTPS", "SMTP"], metadata: "Computer Science|Security|Medium" },
+            { id: "q3", type: "numerical", text: "Calculate the exact value of 25 * 4.", metadata: "Mathematics|Arithmetic|Easy" }
         ]
     };
     state.remainingSeconds = 3600;
@@ -155,9 +157,8 @@ function startExam() {
     views.exam.classList.add('active');
     
     // Header Setup
-    document.getElementById('header-name').textContent = document.getElementById('candidate-name').value || 'Candidate';
-    document.getElementById('header-roll').textContent = state.uuid;
-    document.getElementById('header-seat').textContent = document.getElementById('seat-number').value || 'N/A';
+    document.getElementById('live-timer').classList.remove('hidden');
+    document.getElementById('header-submit-btn').classList.remove('hidden');
     
     const wmText = `${state.uuid} - ${new Date().toISOString().split('T')[0]}`;
     document.getElementById('watermark-overlay').textContent = wmText;
@@ -175,7 +176,8 @@ function resumeExam() {
     views.exam.classList.remove('hidden');
     views.exam.classList.add('active');
     
-    document.getElementById('header-roll').textContent = state.uuid;
+    document.getElementById('live-timer').classList.remove('hidden');
+    document.getElementById('header-submit-btn').classList.remove('hidden');
     document.getElementById('watermark-overlay').textContent = state.uuid;
     
     buildPalette();
@@ -189,8 +191,18 @@ function renderQuestion() {
     
     state.visited[q.id] = true;
     
-    document.getElementById('q-number').textContent = `Question ${state.currentIndex + 1}`;
-    document.getElementById('q-meta').textContent = q.metadata || 'General';
+    // Progress
+    const progress = ((state.currentIndex + 1) / state.paper.questions.length) * 100;
+    document.getElementById('progress-bar').style.width = `${progress}%`;
+
+    // Headers/Chips
+    document.getElementById('q-counter').textContent = `Q${state.currentIndex + 1} / ${state.paper.questions.length}`;
+    
+    const parts = (q.metadata || 'General|Topic|Medium').split('|');
+    document.getElementById('q-subject').textContent = parts[0] || 'General';
+    document.getElementById('q-topic').textContent = parts[1] || 'Topic';
+    document.getElementById('q-difficulty').textContent = parts[2] || 'Medium';
+    
     document.getElementById('q-text').textContent = q.text;
     
     const ansArea = document.getElementById('answer-area');
@@ -199,7 +211,7 @@ function renderQuestion() {
     if (q.type === 'mcq') {
         q.options.forEach((opt, idx) => {
             const div = document.createElement('div');
-            div.className = 'option';
+            div.className = 'option-card';
             if (state.responses[q.id] === idx.toString()) {
                 div.classList.add('selected');
             }
@@ -212,6 +224,8 @@ function renderQuestion() {
             
             const label = document.createElement('label');
             label.textContent = opt;
+            label.style.cursor = 'pointer';
+            label.style.flex = '1';
             
             div.appendChild(input);
             div.appendChild(label);
@@ -225,11 +239,11 @@ function renderQuestion() {
             
             ansArea.appendChild(div);
         });
-    } else if (q.type === 'numerical') {
-        const input = document.createElement('input');
-        input.type = 'number';
-        input.className = 'numerical-input';
-        input.placeholder = 'Enter numerical answer';
+    } else if (q.type === 'numerical' || q.type === 'text') {
+        const input = document.createElement(q.type === 'numerical' ? 'input' : 'textarea');
+        if (q.type === 'numerical') input.type = 'number';
+        input.className = 'answer-input';
+        input.placeholder = 'Type your answer here...';
         if (state.responses[q.id]) input.value = state.responses[q.id];
         
         input.addEventListener('input', (e) => {
@@ -245,15 +259,29 @@ function renderQuestion() {
     const flagBtn = document.getElementById('btn-flag');
     if (state.flags[q.id]) {
         flagBtn.classList.add('active');
-        flagBtn.textContent = 'Unflag';
+        flagBtn.textContent = 'Unmark';
     } else {
         flagBtn.classList.remove('active');
-        flagBtn.textContent = 'Flag for Review';
+        flagBtn.textContent = 'Mark for Review';
+    }
+
+    // Update Clear Button
+    const clearBtn = document.getElementById('btn-clear');
+    if(state.responses[q.id] !== undefined && state.responses[q.id] !== '') {
+        clearBtn.classList.remove('hidden');
+    } else {
+        clearBtn.classList.add('hidden');
     }
     
     // Update Nav Buttons
     document.getElementById('btn-prev').disabled = state.currentIndex === 0;
-    document.getElementById('btn-next').disabled = state.currentIndex === state.paper.questions.length - 1;
+    
+    const nextBtn = document.getElementById('btn-next');
+    if (state.currentIndex === state.paper.questions.length - 1) {
+        nextBtn.disabled = true; // or hide it, since submit is in header
+    } else {
+        nextBtn.disabled = false;
+    }
     
     updatePalette();
 }
@@ -274,17 +302,24 @@ function toggleFlag() {
     saveState();
 }
 
+function clearAnswer() {
+    const qId = state.paper.questions[state.currentIndex].id;
+    delete state.responses[qId];
+    renderQuestion();
+    saveState();
+}
+
 // --- Palette ---
 
 function buildPalette() {
-    const grid = document.getElementById('palette-grid');
+    const grid = document.getElementById('minimal-palette');
     grid.innerHTML = '';
     
     state.paper.questions.forEach((q, idx) => {
-        const btn = document.createElement('button');
-        btn.className = 'q-btn';
-        btn.textContent = idx + 1;
+        const btn = document.createElement('div');
+        btn.className = 'palette-dot';
         btn.id = `pal-${q.id}`;
+        btn.title = `Question ${idx + 1}`;
         
         btn.addEventListener('click', () => {
             state.currentIndex = idx;
@@ -302,7 +337,7 @@ function updatePalette() {
         const btn = document.getElementById(`pal-${q.id}`);
         if (!btn) return;
         
-        btn.className = 'q-btn'; // reset
+        btn.className = 'palette-dot'; // reset
         
         if (idx === state.currentIndex) btn.classList.add('active');
         
@@ -392,17 +427,11 @@ async function syncWithBackend() {
 }
 
 function updateConnectionStatus(isConnected) {
-    const dot = document.getElementById('conn-status');
-    const text = document.getElementById('conn-text');
     const banner = document.getElementById('connection-banner');
     
     if (isConnected) {
-        dot.className = 'dot green';
-        text.textContent = 'Connected';
         banner.classList.add('hidden');
     } else {
-        dot.className = 'dot red';
-        text.textContent = 'Offline';
         banner.classList.remove('hidden');
     }
 }
@@ -435,10 +464,12 @@ function handleSecurityEvent(eventType) {
 async function finalSubmit(isAuto = false) {
     if (!isAuto) {
         const unans = state.paper.questions.length - Object.keys(state.responses).length;
+        let msg = "Are you sure you want to submit your exam?";
         if (unans > 0) {
-            const conf = confirm(`You have ${unans} unanswered questions. Are you sure you want to submit?`);
-            if (!conf) return;
+            msg = `You have ${unans} unanswered questions. Are you sure you want to submit?`;
         }
+        const conf = confirm(msg);
+        if (!conf) return;
     }
     
     clearInterval(timerInterval);
@@ -487,7 +518,7 @@ function showReceipt(data) {
     document.getElementById('receipt-time').textContent = new Date().toLocaleString();
     
     if (data.score !== undefined) {
-        document.getElementById('score-container').classList.remove('hidden');
+        document.getElementById('score-row').classList.remove('hidden');
         document.getElementById('receipt-score').textContent = data.score;
     }
     
