@@ -8,20 +8,17 @@ class Settings:
     # In-memory ephemeral encryption key for SQLite TDE
     SQLITE_TDE_KEY: bytes = os.urandom(32)
     
-    # Use /tmp on Vercel or read-only/serverless environments, local data folder otherwise
-    if os.environ.get("VERCEL") or os.environ.get("AWS_LAMBDA_FUNCTION_NAME"):
-        DB_PATH: str = os.path.join(tempfile.gettempdir(), "nivasha.db")
-        ADMIN_TOKEN_FILE: str = os.path.join(tempfile.gettempdir(), "admin_token.txt")
-    else:
-        DB_PATH: str = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "data", "nivasha.db")
-        ADMIN_TOKEN_FILE: str = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "admin_token.txt")
+    # Use /tmp for serverless (Vercel) writable environment if needed
+    _base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+    _is_vercel = os.environ.get("VERCEL") == "1" or os.environ.get("AWS_LAMBDA_FUNCTION_NAME") is not None
+    
+    DB_PATH: str = os.path.join(tempfile.gettempdir(), "nivasha.db") if _is_vercel else os.path.join(_base_dir, "data", "nivasha.db")
+    ADMIN_TOKEN_FILE: str = os.path.join(tempfile.gettempdir(), "admin_token.txt") if _is_vercel else os.path.join(_base_dir, "admin_token.txt")
     
     @property
     def ADMIN_TOKEN(self) -> str:
-        env_token = os.environ.get("ADMIN_TOKEN")
-        if env_token:
-            return env_token
-            
+        if os.environ.get("ADMIN_TOKEN"):
+            return os.environ["ADMIN_TOKEN"]
         if not os.path.exists(self.ADMIN_TOKEN_FILE):
             token = "admin-" + os.urandom(16).hex()
             os.makedirs(os.path.dirname(self.ADMIN_TOKEN_FILE), exist_ok=True)

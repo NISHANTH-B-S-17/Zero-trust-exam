@@ -1229,8 +1229,8 @@
         };
 
         // --- API Client ---
-        const isVercel = window.location.hostname.includes('vercel.app') || (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1');
-        const API_BASE = isVercel ? '' : 'http://127.0.0.1:8080';
+        const isLocalHost = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost';
+        const API_BASE = isLocalHost ? 'http://127.0.0.1:8080' : '';
         // Check for admin token in URL or use a default one for now
         const urlParams = new URLSearchParams(window.location.search);
         const adminToken = urlParams.get('token') || localStorage.getItem('admin_token') || 'admin-demo-token';
@@ -1240,7 +1240,10 @@
 
         async function fetchAPI(path, options = {}) {
             try {
-                const res = await fetch(API_BASE + path, {
+                // Support both full path starting with /api/v1 or endpoint relative path
+                const endpoint = path.startsWith('/api/v1') ? path.substring(7) : path;
+                const url = API_BASE + (endpoint.startsWith('/') ? endpoint : '/' + endpoint);
+                const res = await fetch(url, {
                     ...options,
                     headers: {
                         'Content-Type': 'application/json',
@@ -1325,19 +1328,50 @@
             const demoBanner = document.getElementById('demo-banner');
 
             if (!data) {
-                // Completely Offline / Backend not connected
-                errBanner.innerHTML = '<div><strong>Local backend not connected:</strong> Start backend at <code>http://127.0.0.1:8080</code> for live telemetry and data.</div>';
-                errBanner.classList.add('active');
-                demoBanner.classList.remove('active');
-                dot.classList.add('offline');
-                text.textContent = 'Local backend not connected';
+                if (isLocalHost) {
+                    errBanner.innerHTML = '<div><strong>Local backend not connected:</strong> Start backend at <code>http://127.0.0.1:8080</code> for live telemetry and data.</div>';
+                    errBanner.classList.add('active');
+                    errBanner.style.display = 'block';
+                    demoBanner.classList.remove('active');
+                    dot.classList.add('offline');
+                    text.textContent = 'Local backend not connected';
+                    if (!demoModeActive) {
+                        demoModeActive = true;
+                        renderMockTables();
+                    }
+                } else {
+                    // Check if health endpoint responds on Vercel
+                    const healthData = await fetchAPI('/api/v1/health');
+                    if (healthData && (healthData.status === 'ok' || healthData.service)) {
+                        errBanner.style.display = 'none';
+                        errBanner.classList.remove('active');
+                        demoBanner.classList.add('active');
+                        dot.classList.remove('offline');
+                        text.textContent = 'Vercel Preview Mode';
+                        if (!demoModeActive) {
+                            demoModeActive = true;
+                            renderMockTables();
+                        }
+                    } else {
+                        // Vercel serverless preview fallback with mock tables
+                        errBanner.style.display = 'none';
+                        errBanner.classList.remove('active');
+                        demoBanner.classList.add('active');
+                        dot.classList.remove('offline');
+                        text.textContent = 'Vercel Preview Mode';
+                        if (!demoModeActive) {
+                            demoModeActive = true;
+                            renderMockTables();
+                        }
+                    }
+                }
                 return;
             }
 
             // Online!
             errBanner.classList.remove('active');
             dot.classList.remove('offline');
-            text.textContent = '127.0.0.1:8080';
+            text.textContent = isLocalHost ? '127.0.0.1:8080' : 'Vercel API Connected';
             
             // Check if backend supports roster API, else use demo data
             const rosterData = await fetchAPI('/api/v1/admin/students');

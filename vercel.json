@@ -1,17 +1,30 @@
 {
   "version": 2,
+  "builds": [
+    {
+      "src": "api/index.py",
+      "use": "@vercel/python",
+      "config": {
+        "includeFiles": "backend/**"
+      }
+    },
+    {
+      "src": "admin/**",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "kiosk/**",
+      "use": "@vercel/static"
+    }
+  ],
   "routes": [
     {
       "src": "/api/(.*)",
       "dest": "api/index.py"
     },
     {
-      "src": "/kiosk",
-      "dest": "kiosk/index.html"
-    },
-    {
-      "src": "/kiosk/(.*)",
-      "dest": "kiosk/$1"
+      "src": "/ws/(.*)",
+      "dest": "api/index.py"
     },
     {
       "src": "/dashboard",
@@ -22,7 +35,15 @@
       "dest": "admin/$1"
     },
     {
-      "src": "/",
+      "src": "/kiosk",
+      "dest": "kiosk/index.html"
+    },
+    {
+      "src": "/kiosk/(.*)",
+      "dest": "kiosk/$1"
+    },
+    {
+      "src": "/$",
       "dest": "admin/dashboard.html"
     },
     {

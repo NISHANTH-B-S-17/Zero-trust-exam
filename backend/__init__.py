@@ -1,1 +1,1 @@
-# Root package marker for Vercel imports
+# Root package marker
