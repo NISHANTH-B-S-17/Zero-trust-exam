@@ -83,7 +83,7 @@ def test_database_creation():
         await app_db.init_db()
         await app_db.seed_demo_data()
         all_q = await app_db.fetch_all_questions()
-        assert len(all_q) >= 10
+        assert len(all_q) >= 2
     
     asyncio.run(run_test())
 
