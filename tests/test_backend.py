@@ -84,3 +84,13 @@ def test_database_creation():
         await db.close()
     
     asyncio.run(run_test())
+
+def test_firebase_config_exists():
+    import os
+    assert os.path.exists("firebase.json")
+    assert os.path.exists(".firebaserc")
+    
+    with open("firebase.json", "r") as f:
+        content = f.read()
+        assert "admin" in content
+        assert "dashboard.html" in content
