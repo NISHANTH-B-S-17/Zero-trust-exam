@@ -1,5 +1,6 @@
 // Constants
-const API_BASE = 'http://127.0.0.1:8080/api/v1/student';
+const isLocalHost = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost';
+const API_BASE = isLocalHost ? 'http://127.0.0.1:8080/api/v1/student' : '/api/v1/student';
 const STORAGE_KEY = 'ZERO_TRUST_EXAM_SESSION_V6';
 
 // State Architecture
