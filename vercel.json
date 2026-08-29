@@ -11,6 +11,10 @@
     {
       "src": "admin/**",
       "use": "@vercel/static"
+    },
+    {
+      "src": "kiosk/**",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
@@ -24,6 +28,18 @@
     },
     {
       "src": "/dashboard",
+      "dest": "admin/dashboard.html"
+    },
+    {
+      "src": "/kiosk/(.*)",
+      "dest": "kiosk/$1"
+    },
+    {
+      "src": "/kiosk",
+      "dest": "kiosk/index.html"
+    },
+    {
+      "src": "/$",
       "dest": "admin/dashboard.html"
     },
     {
