@@ -1021,6 +1021,11 @@
 
         // --- API Client ---
         const API_BASE = 'http://127.0.0.1:8080';
+        // Check for admin token in URL or use a default one for now
+        const urlParams = new URLSearchParams(window.location.search);
+        const adminToken = urlParams.get('token') || localStorage.getItem('admin_token') || 'admin-demo-token';
+        localStorage.setItem('admin_token', adminToken);
+        
         let demoModeActive = false;
 
         async function fetchAPI(path, options = {}) {
@@ -1029,6 +1034,7 @@
                     ...options,
                     headers: {
                         'Content-Type': 'application/json',
+                        'x-admin-token': adminToken,
                         ...(options.headers || {})
                     }
                 });
@@ -1101,7 +1107,7 @@
         }
 
         async function pollData() {
-            const data = await fetchAPI('/api/v1/admin/live-monitor');
+            const data = await fetchAPI('/api/v1/admin/dashboard');
             
             const errBanner = document.getElementById('error-banner');
             const dot = document.getElementById('conn-dot');
@@ -1126,7 +1132,9 @@
             const rosterData = await fetchAPI('/api/v1/admin/students');
             const submissionData = await fetchAPI('/api/v1/admin/submissions');
             const vaultData = await fetchAPI('/api/v1/admin/questions');
-            const healthData = await fetchAPI('/api/v1/admin/node-health');
+            const auditData = await fetchAPI('/api/v1/admin/audit-logs');
+            const liveSessionsData = await fetchAPI('/api/v1/admin/live-sessions');
+            const healthData = await fetchAPI('/api/v1/health');
 
             if (!rosterData || !submissionData || !vaultData) {
                 if(!demoModeActive) {
@@ -1138,6 +1146,30 @@
                 demoBanner.classList.remove('active');
                 demoModeActive = false;
                 
+                // Dashboard Data
+                document.getElementById('dash-total').textContent = data.stats?.total_candidates || 0;
+                
+                let activeCount = data.stats?.active_candidates;
+                if (typeof activeCount === 'string' && activeCount.includes('/')) {
+                     activeCount = activeCount.split('/')[0].trim();
+                }
+                document.getElementById('dash-active').textContent = activeCount || 0;
+                
+                document.getElementById('dash-reg').textContent = data.stats?.registered_idle || '4 / 0';
+                document.getElementById('dash-sub').textContent = data.stats?.submitted || 0;
+
+                const tBody = document.getElementById('dash-telemetry');
+                if(tBody && data.telemetry) {
+                    tBody.innerHTML = data.telemetry.map(s => `
+                        <tr>
+                            <td class="mono">${s.roll_no || s.roll || ''}</td>
+                            <td>${s.name || ''}</td>
+                            <td>${renderBadges('', s.status || '')}</td>
+                            <td class="mono" style="font-size:11px;">${s.ping || 'N/A'}</td>
+                        </tr>
+                    `).join('');
+                }
+
                 // Render real data (assuming the backend returns array under 'data' key or directly)
                 const rList = rosterData.data || rosterData;
                 const rBody = document.getElementById('table-roster');
@@ -1179,15 +1211,58 @@
                 if(vBody && Array.isArray(vList)) {
                     vBody.innerHTML = vList.map(q => `
                         <tr>
-                            <td class="mono">${q.id || q.q_id}</td>
-                            <td>${q.subject}</td>
-                            <td>${q.topic}</td>
-                            <td><span class="status-badge blue">${q.type}</span></td>
-                            <td>${q.diff || q.difficulty}</td>
-                            <td style="max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${q.preview}</td>
+                            <td class="mono">${q.id || q.q_id || ''}</td>
+                            <td>${q.subject || ''}</td>
+                            <td>${q.topic || ''}</td>
+                            <td><span class="status-badge blue">${q.type || ''}</span></td>
+                            <td>${q.diff || q.difficulty || ''}</td>
+                            <td style="max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${q.preview || q.question_text || ''}</td>
                         </tr>
                     `).join('');
                 }
+
+                const lsList = liveSessionsData?.data || liveSessionsData || [];
+                const lsBody = document.getElementById('table-live');
+                if (lsBody && Array.isArray(lsList)) {
+                     lsBody.innerHTML = lsList.length > 0 ? lsList.map((s, i) => `
+                        <tr>
+                            <td>${i+1}</td>
+                            <td class="mono" style="font-size:11px;">${s.uuid || ''}</td>
+                            <td>${s.name || ''}</td>
+                            <td class="mono">${s.roll_no || ''}</td>
+                            <td class="mono">${s.seat || ''}</td>
+                            <td>${renderBadges('', s.status || '')}</td>
+                            <td>${s.answered || '0'}/${s.total_q || '0'}</td>
+                            <td>${s.time_left || '--'}</td>
+                            <td>${s.last_hb || '--'}</td>
+                        </tr>
+                    `).join('') : `<tr><td colspan="9" style="text-align:center;color:var(--text-muted);">No active sessions.</td></tr>`;
+                }
+
+                const aList = auditData?.data || auditData || [];
+                const aBody = document.getElementById('table-audit');
+                if (aBody && Array.isArray(aList)) {
+                     aBody.innerHTML = aList.length > 0 ? aList.map((a) => {
+                        let sevClass = 'info';
+                        if (a.severity === 'WARNING') sevClass = 'warning';
+                        if (a.severity === 'DANGER' || a.severity === 'CRITICAL') sevClass = 'danger';
+                        return `
+                        <tr>
+                            <td>${a.timestamp || ''}</td>
+                            <td>${a.event_type || ''}</td>
+                            <td><span class="status-badge ${sevClass === 'warning' ? 'orange' : (sevClass === 'danger' ? 'red' : 'blue')}">${a.severity || ''}</span></td>
+                            <td class="mono" style="font-size:11px;">${a.uuid || ''}</td>
+                            <td>${a.detail || a.details || ''}</td>
+                        </tr>
+                        `;
+                    }).join('') : `<tr><td colspan="5" style="text-align:center;color:var(--text-muted);">No logs.</td></tr>`;
+                }
+                // Update badges
+                const liveCountBadge = document.getElementById('badge-live');
+                if (liveCountBadge) liveCountBadge.textContent = lsList.filter(s => s.status === 'IN_PROGRESS' || s.status === 'ONLINE').length;
+                
+                const auditCountBadge = document.getElementById('badge-audit');
+                if (auditCountBadge) auditCountBadge.textContent = aList.length;
             }
 
             // Update Dashboard Stats safely
@@ -1210,13 +1285,11 @@
 
             // Update Dash Telemetry & Live Sessions Table
             if (data.telemetry) {
-                const liveCount = data.telemetry.filter(c => c.status === 'IN_PROGRESS' || c.status === 'ONLINE').length;
-                safeSet('badge-live', liveCount);
+                // Live badge count already handled above
 
                 let dashHtml = '';
-                let liveHtml = '';
                 
-                data.telemetry.forEach((c, idx) => {
+                data.telemetry.forEach((c) => {
                     let pingColor = c.ping === '-' ? 'var(--text-muted)' : (parseInt(c.ping) > 30 ? 'var(--warning)' : 'var(--text-main)');
                     
                     dashHtml += `
@@ -1227,35 +1300,16 @@
                             <td class="mono" style="color:${pingColor};">${c.ping}</td>
                         </tr>
                     `;
-                    
-                    liveHtml += `
-                        <tr>
-                            <td>${idx+1}</td>
-                            <td class="mono" style="font-size:11px;">${c.uuid || 'u-'+c.roll.replace('RN-','')}</td>
-                            <td>${c.name}</td>
-                            <td class="mono">${c.roll || c.roll_no}</td>
-                            <td class="mono">${c.seat}</td>
-                            <td>${renderBadges('', c.status)}</td>
-                            <td>${c.q_count || 16}</td>
-                            <td>${c.answered || '--'}</td>
-                            <td>${c.time_left || '--'}</td>
-                            <td class="mono" style="color:${pingColor};">${c.ping}</td>
-                        </tr>
-                    `;
                 });
                 
                 const dBody = document.getElementById('dash-telemetry');
                 if(dBody) dBody.innerHTML = dashHtml || '<tr><td colspan="4">No data</td></tr>';
-                
-                const lBody = document.getElementById('table-live');
-                if(lBody) lBody.innerHTML = liveHtml || '<tr><td colspan="10">No data</td></tr>';
             }
 
             // Update Audits
             if (data.audit_logs) {
-                safeSet('badge-audit', data.audit_logs.length);
+                // Audit badge already set earlier if possible
                 
-                let audHtml = '';
                 let dAudHtml = '';
                 
                 // Reverse for timeline (newest top usually, depends on backend, assuming chronological array)
@@ -1269,26 +1323,10 @@
                             <div class="t-msg">${a.msg}</div>
                         </div>
                     `;
-                    
-                    let sBadge = a.type === 'warn' ? 'orange' : (a.type === 'danger' ? 'red' : 'blue');
-                    let sText = a.type === 'warn' ? 'Warning' : (a.type === 'danger' ? 'Critical' : 'Info');
-                    
-                    audHtml += `
-                        <tr>
-                            <td class="mono" style="font-size:12px;">${a.time}</td>
-                            <td>System Event</td>
-                            <td><span class="status-badge ${sBadge}">${sText}</span></td>
-                            <td class="mono" style="font-size:11px;">SYSTEM</td>
-                            <td>${a.msg}</td>
-                        </tr>
-                    `;
                 });
 
                 const tAud = document.getElementById('dash-audit');
                 if(tAud) tAud.innerHTML = dAudHtml;
-
-                const pAud = document.getElementById('table-audit');
-                if(pAud) pAud.innerHTML = audHtml;
             }
         }
 
