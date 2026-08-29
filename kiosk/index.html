@@ -11,109 +11,269 @@
         ⚠️ Backend connection lost. Autosaving locally. Please do not close the application.
     </div>
 
-    <!-- Global Header -->
-    <header class="global-header">
-        <div class="logo-area">
-            <div class="logo-square">N</div>
-            <span class="logo-text">ZERO TRUST EXAM ENGINE</span>
-        </div>
-        <div class="header-actions">
-            <div class="timer hidden" id="live-timer">00:00:00</div>
-            <button id="header-submit-btn" class="btn primary-btn sm hidden">Submit Exam</button>
-        </div>
-    </header>
-
     <!-- Login View -->
     <div id="login-view" class="view active">
-        <div class="login-container">
-            <div class="back-link">← Back to Portal</div>
-            <h1>Student Examination</h1>
-            <p class="subtitle">Enter your Candidate UUID to begin your secured, timed examination session.</p>
-            
-            <div class="warning-box">
-                Your exam paper is uniquely watermarked. Do not share your screen or copy questions.
-            </div>
-
-            <form id="login-form">
-                <div class="form-group">
-                    <label for="uuid">CANDIDATE UUID</label>
-                    <input type="text" id="uuid" class="mono-input" placeholder="550e8400-e29b-41d4-a716-446655440000" required autocomplete="off" spellcheck="false">
+        <!-- Top Bar -->
+        <header class="login-header">
+            <div class="header-left">
+                <div class="logo-shield">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                 </div>
+                <div class="brand-text">
+                    <h1>ZERO TRUST EXAM ENGINE</h1>
+                    <span class="subtitle">SECURE EXAMINATION TERMINAL</span>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="time-block">
+                    <span class="label">Exam Starts At</span>
+                    <span class="value" id="exam-start-time">--:--</span>
+                </div>
+                <div class="time-block">
+                    <span class="label">Login Opens At</span>
+                    <span class="value" id="login-open-time">--:--</span>
+                </div>
+            </div>
+        </header>
+
+        <div class="login-content">
+            <!-- Left Card: Instructions -->
+            <div class="instructions-card glass-card">
+                <h2>Exam Instructions</h2>
+                <ol class="instruction-list">
+                    <li>Keep your candidate ID / roll number ready.</li>
+                    <li>Verify your assigned exam center and seat number.</li>
+                    <li>Keep unauthorized devices and materials away.</li>
+                    <li>Once verification begins, remain at the examination terminal.</li>
+                    <li>Follow all examination instructions and do not leave until submitted.</li>
+                </ol>
                 
-                <div id="login-error" class="error-text hidden">Authentication failed. Check UUID or backend connection.</div>
-                
-                <button type="submit" class="btn primary-btn block-btn">Start Examination</button>
-            </form>
-            
-            <div class="status-footer">
-                <span id="conn-status" class="dot green"></span>
-                <span id="conn-text">Connected to local security node · 127.0.0.1:8080</span>
+                <div class="notice-box">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    <div class="notice-text">
+                        <p>The exam cannot be started before the login window opens.</p>
+                        <p>Please wait for the scheduled time.</p>
+                    </div>
+                </div>
+
+                <div class="card-footer">
+                    Your Integrity. Our Priority.
+                </div>
+            </div>
+
+            <!-- Right Card: Login -->
+            <div class="verification-card glass-card">
+                <div class="card-header-center">
+                    <div class="logo-shield large">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    </div>
+                    <h2>ZERO TRUST EXAM ENGINE</h2>
+                    <span class="subtitle">SECURE EXAMINATION TERMINAL</span>
+                </div>
+
+                <div class="verification-section">
+                    <h3>Candidate Verification</h3>
+                    <form id="login-form">
+                        <div class="form-group">
+                            <label for="uuid">Student UUID</label>
+                            <input type="text" id="uuid" class="modern-input mono-input" placeholder="Enter your UUID" required autocomplete="off" spellcheck="false">
+                        </div>
+                        
+                        <div id="login-error" class="error-banner hidden">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                            <span id="login-error-text">Authentication failed. Check UUID or connection.</span>
+                        </div>
+                        
+                        <button type="submit" class="btn primary-btn gradient-btn block-btn" id="start-verification-btn">Start Verification</button>
+                    </form>
+                </div>
             </div>
         </div>
-    </div>
 
-    <!-- Offline View -->
-    <div id="offline-view" class="view hidden" style="justify-content: center; align-items: center; text-align: center;">
-        <div class="login-container" style="border-color: #f59e0b;">
-            <h1 style="color: #f59e0b; margin-bottom: 16px;">⚠️ Backend Offline</h1>
-            <p style="color: var(--text-muted); font-size: 15px; margin-bottom: 24px; line-height: 1.5;">
-                The connection to the local security node (127.0.0.1:8080) could not be established.<br><br>
-                Please ensure the backend is running and contact the invigilator.
-            </p>
-            <button onclick="location.reload()" class="btn outline-btn warning block-btn">Retry Connection</button>
-        </div>
+        <footer class="system-status-bar">
+            <div class="status-left">
+                Secure Examination Terminal
+            </div>
+            <div class="status-right">
+                <div class="status-indicator">
+                    <span id="conn-status" class="dot green"></span>
+                    <span id="conn-text">Connected to local security node</span>
+                </div>
+            </div>
+        </footer>
     </div>
 
     <!-- Exam View -->
     <div id="exam-view" class="view hidden">
-        <div class="progress-bar-container">
-            <div class="progress-bar" id="progress-bar" style="width: 0%"></div>
-        </div>
-        <main class="exam-main">
-            <div class="question-card">
-                <div class="question-header">
-                    <div class="chips">
-                        <span class="chip" id="q-counter">Q1 / 10</span>
-                        <span class="chip" id="q-subject">Subject</span>
-                        <span class="chip" id="q-topic">Topic</span>
-                        <span class="chip" id="q-difficulty">Difficulty</span>
-                    </div>
+        <!-- Top Header -->
+        <header class="exam-header">
+            <div class="header-left">
+                <div class="logo-shield">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                 </div>
-                
-                <div class="question-content" id="q-text">
-                    Loading question...
-                </div>
-                
-                <!-- Anti-leak watermark underlay -->
-                <div id="watermark-overlay" class="watermark"></div>
-
-                <div class="answer-area" id="answer-area">
-                    <!-- Dynamic content -->
-                </div>
-
-                <div class="action-bar">
-                    <div class="left-actions">
-                        <button id="btn-prev" class="btn outline-btn">← Previous</button>
-                        <button id="btn-clear" class="btn text-btn hidden">Clear Answer</button>
-                    </div>
-                    <div class="right-actions">
-                        <button id="btn-flag" class="btn outline-btn warning">Mark for Review</button>
-                        <button id="btn-next" class="btn primary-btn">Next →</button>
-                    </div>
+                <div class="brand-text">
+                    <h1>ZERO TRUST EXAM ENGINE</h1>
+                    <span class="subtitle">SECURE EXAMINATION TERMINAL</span>
                 </div>
             </div>
             
-            <!-- Minimal palette below card -->
-            <div class="minimal-palette" id="minimal-palette">
-                <!-- Dots generated here -->
+            <div class="header-center glass-panel">
+                <div class="info-group">
+                    <span class="label">STUDENT UUID</span>
+                    <span class="value mono" id="header-uuid">--</span>
+                </div>
             </div>
-        </main>
+
+            <div class="header-right glass-panel">
+                <div class="info-group">
+                    <span class="label">TIME REMAINING</span>
+                    <span class="value timer" id="live-timer">00:00:00</span>
+                </div>
+                <button id="header-submit-btn" class="btn primary-btn gradient-btn">Submit Exam</button>
+            </div>
+        </header>
+
+        <div class="exam-layout">
+            <!-- Left Panel -->
+            <aside class="left-panel">
+                <div class="progress-card glass-card">
+                    <div class="circular-progress">
+                        <svg viewBox="0 0 36 36" class="circular-chart">
+                            <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            <path class="circle" id="progress-circle" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            <text x="18" y="20.35" class="percentage" id="progress-text">0%</text>
+                        </svg>
+                    </div>
+                    <div class="progress-text">
+                        <span id="answered-count">0</span> of <span id="total-count">0</span> questions
+                    </div>
+                </div>
+
+                <div class="exam-instructions-card glass-card">
+                    <h3>Instructions</h3>
+                    <ul>
+                        <li>Read each question carefully before answering.</li>
+                        <li>You can mark a question for review and come back later.</li>
+                        <li>You can change your answer before final submission.</li>
+                        <li>Do not refresh or close the window.</li>
+                        <li>All activities are monitored and recorded.</li>
+                    </ul>
+                </div>
+            </aside>
+
+            <!-- Center Panel (Questions) -->
+            <main class="center-panel">
+                <div class="question-container glass-card">
+                    <div class="question-header-bar">
+                        <h2 id="q-counter">QUESTION 1 OF 10</h2>
+                        <div class="metadata-chips">
+                            <span class="chip" id="q-subject">Subject</span>
+                            <span class="chip" id="q-topic">Topic</span>
+                            <span class="chip" id="q-difficulty">Difficulty</span>
+                        </div>
+                    </div>
+
+                    <div class="question-scroll-area">
+                        <div class="question-content" id="q-text">
+                            Loading question...
+                        </div>
+                        
+                        <!-- Anti-leak watermark underlay -->
+                        <div id="watermark-overlay" class="watermark"></div>
+
+                        <div class="answer-area" id="answer-area">
+                            <!-- Dynamic content -->
+                        </div>
+                    </div>
+
+                    <div class="question-actions">
+                        <div class="action-group-left">
+                            <button id="btn-prev" class="btn outline-btn">Previous</button>
+                            <button id="btn-clear" class="btn ghost-btn hidden">Clear Response</button>
+                        </div>
+                        <div class="action-group-right">
+                            <button id="btn-flag" class="btn outline-btn warning">Mark for Review</button>
+                            <button id="btn-next" class="btn primary-btn gradient-btn">Save & Next</button>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <!-- Right Panel (Palette) -->
+            <aside class="right-panel">
+                <div class="palette-card glass-card">
+                    <div class="palette-header">
+                        <h3>Question Palette</h3>
+                    </div>
+                    <div class="palette-grid" id="question-palette">
+                        <!-- Grid buttons generated here -->
+                    </div>
+                    <div class="palette-legend">
+                        <div class="legend-item"><span class="legend-dot answered"></span> Answered</div>
+                        <div class="legend-item"><span class="legend-dot unvisited"></span> Unvisited</div>
+                        <div class="legend-item"><span class="legend-dot visited"></span> Visited</div>
+                        <div class="legend-item"><span class="legend-dot review"></span> Marked for Review</div>
+                    </div>
+                </div>
+            </aside>
+        </div>
+
+        <footer class="security-status-bar">
+            <div class="sec-item">
+                <span class="label">SECURITY NODE</span>
+                <span class="value success" id="status-node">Connected</span>
+            </div>
+            <div class="sec-item">
+                <span class="label">AUTO-SAVE</span>
+                <span class="value" id="status-autosave">Last saved: --:--</span>
+            </div>
+            <div class="sec-item">
+                <span class="label">SESSION INTEGRITY</span>
+                <span class="value success" id="status-integrity">Verified</span>
+            </div>
+            <div class="sec-item">
+                <span class="label">KEYBOARD LOCKED</span>
+                <span class="value active" id="status-keyboard">Active</span>
+            </div>
+            <div class="sec-item">
+                <span class="label">FULLSCREEN MODE</span>
+                <span class="value active" id="status-fullscreen">Active</span>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Submit Confirmation Modal -->
+    <div id="submit-confirm-modal" class="modal hidden">
+        <div class="modal-content glass-card">
+            <h2>SUBMIT EXAM?</h2>
+            <div class="submit-summary">
+                <div class="summary-row">
+                    <span>Answered:</span>
+                    <span id="confirm-answered" class="fw-bold">0</span>
+                </div>
+                <div class="summary-row">
+                    <span>Unanswered:</span>
+                    <span id="confirm-unanswered" class="fw-bold text-warning">0</span>
+                </div>
+                <div class="summary-row">
+                    <span>Marked for Review:</span>
+                    <span id="confirm-review" class="fw-bold text-purple">0</span>
+                </div>
+            </div>
+            <p class="warning-text">You will not be able to change your answers after submission.</p>
+            <div class="modal-actions">
+                <button id="btn-cancel-submit" class="btn outline-btn">Cancel</button>
+                <button id="btn-confirm-submit" class="btn primary-btn gradient-btn">Submit Exam</button>
+            </div>
+        </div>
     </div>
 
     <!-- Receipt Modal -->
     <div id="receipt-modal" class="modal hidden">
-        <div class="modal-content dark-modal">
-            <div class="success-icon">✓</div>
+        <div class="modal-content glass-card success-modal">
+            <div class="success-icon-large">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
             <h2>Submission Accepted</h2>
             <div class="receipt-details">
                 <div class="receipt-row">
@@ -127,10 +287,10 @@
                 </div>
                 <div class="receipt-hash-box">
                     <div class="hash-label">RECEIPT HASH</div>
-                    <div class="hash-value" id="receipt-hash">Generating...</div>
+                    <div class="hash-value mono-text" id="receipt-hash">Generating...</div>
                 </div>
             </div>
-            <p class="warning-text">Wait for the invigilator before exiting the kiosk.</p>
+            <p class="info-text">Wait for the invigilator before exiting the kiosk.</p>
             <button id="exit-btn" class="btn outline-btn block-btn">Exit Terminal</button>
         </div>
     </div>
