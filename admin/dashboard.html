@@ -522,6 +522,7 @@
             <div class="nav-section">SECURITY</div>
             <a class="nav-item" data-target="page-forensic" data-title="Forensic Tracer" data-category="Attribution">Forensic Tracer</a>
             <a class="nav-item" data-target="page-vault" data-title="Question Vault" data-category="Security">Question Vault</a>
+            <a class="nav-item" data-target="page-staff-security" data-title="Staff Security" data-category="Insider Access Control">Staff Security</a>
             <a class="nav-item" data-target="page-payload" data-title="Payload Manager" data-category="Crypto">Payload Manager</a>
             <a class="nav-item" data-target="page-ai" data-title="AI Air Gap" data-category="Crypto">AI Air Gap</a>
 
@@ -824,6 +825,214 @@
                                 <tr><td colspan="6" style="text-align:center;color:var(--text-muted);">Loading vault...</td></tr>
                             </tbody>
                         </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 7b. Staff Security -->
+            <div id="page-staff-security" class="page">
+                <div class="demo-banner active" style="margin-bottom: 24px;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                    <div><strong>Demo policy preview - backend endpoint pending</strong></div>
+                </div>
+
+                <div class="grid-cards" style="grid-template-columns: repeat(3, 1fr);">
+                    <div class="card" style="border-left: 4px solid var(--primary);">
+                        <div class="metric-title">Role-Based Access</div>
+                        <div class="metric-value success" style="font-size:16px; margin-top:8px;">ACTIVE</div>
+                        <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">Minimizes raw paper exposure</div>
+                    </div>
+                    <div class="card" style="border-left: 4px solid var(--primary);">
+                        <div class="metric-title">Risk Scoring</div>
+                        <div class="metric-value success" style="font-size:16px; margin-top:8px;">ENFORCED</div>
+                        <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">Detects suspicious behavior</div>
+                    </div>
+                    <div class="card" style="border-left: 4px solid var(--primary);">
+                        <div class="metric-title">Staff Audit Trail</div>
+                        <div class="metric-value success" style="font-size:16px; margin-top:8px;">LOGGING</div>
+                        <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">Creates accountability</div>
+                    </div>
+                </div>
+
+                <div class="grid-split" style="grid-template-columns: 2fr 1fr;">
+                    <!-- Roles & Assignments -->
+                    <div style="display: flex; flex-direction: column; gap: 24px;">
+                        <div class="panel" style="margin-bottom: 0;">
+                            <div class="panel-header">Staff Roles Overview</div>
+                            <div class="table-wrap">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Role</th>
+                                            <th>Allowed Actions</th>
+                                            <th>Blocked Actions</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><span class="status-badge blue">QUESTION_CREATOR</span></td>
+                                            <td>Create Qs, View Own Qs</td>
+                                            <td>View Final Paper, Export Vault</td>
+                                            <td><span class="status-badge green">Enforced</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td><span class="status-badge purple">REVIEWER</span></td>
+                                            <td>View Assigned Qs</td>
+                                            <td>View Unassigned Qs, Export</td>
+                                            <td><span class="status-badge green">Enforced</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td><span class="status-badge orange">EXAM_CONTROLLER</span></td>
+                                            <td>Manage Roster, Start Exam</td>
+                                            <td>View Raw Qs, Export Vault</td>
+                                            <td><span class="status-badge green">Enforced</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td><span class="status-badge red">SECURITY_ADMIN</span></td>
+                                            <td>Trace Leaks, Manage Roles</td>
+                                            <td>View Raw Qs</td>
+                                            <td><span class="status-badge green">Enforced</span></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="panel" style="margin-bottom: 0;">
+                            <div class="panel-header">Reviewer Assignments</div>
+                            <div class="table-wrap">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Role</th>
+                                            <th>Assigned Qs</th>
+                                            <th>Last Viewed</th>
+                                            <th>Risk Score</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="table-reviewer-assignments">
+                                        <tr>
+                                            <td>Dr. A. Sharma</td>
+                                            <td><span class="status-badge purple">REVIEWER</span></td>
+                                            <td class="mono">Q-1049, Q-1050</td>
+                                            <td>10 mins ago</td>
+                                            <td><span style="color: var(--success); font-weight: 600;">12</span> (LOW)</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Prof. K. Iyer</td>
+                                            <td><span class="status-badge purple">REVIEWER</span></td>
+                                            <td class="mono">Q-1051</td>
+                                            <td>2 hours ago</td>
+                                            <td><span style="color: var(--warning); font-weight: 600;">45</span> (MEDIUM)</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="panel" style="margin-bottom: 0;">
+                            <div class="panel-header">Insider Risk Alerts</div>
+                            <div class="table-wrap">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Staff User</th>
+                                            <th>Risk Level</th>
+                                            <th>Trigger Reason</th>
+                                            <th>Action Taken</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="table-risk-alerts">
+                                        <tr>
+                                            <td>S. Gupta (Creator)</td>
+                                            <td><span class="status-badge red">CRITICAL</span></td>
+                                            <td>Attempted final paper view</td>
+                                            <td><span style="color: var(--danger); font-weight: 600;">BLOCKED</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Prof. K. Iyer (Reviewer)</td>
+                                            <td><span class="status-badge orange">HIGH</span></td>
+                                            <td>Repeated access close to exam</td>
+                                            <td><span style="color: var(--warning); font-weight: 600;">FLAGGED</span></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Side Panels -->
+                    <div style="display: flex; flex-direction: column; gap: 24px;">
+                        <div class="panel" style="margin-bottom: 0;">
+                            <div class="panel-header">Blocked Actions</div>
+                            <div class="table-wrap">
+                                <table style="font-size: 12px;">
+                                    <thead>
+                                        <tr>
+                                            <th>Time</th>
+                                            <th>Action & Reason</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="table-blocked-actions">
+                                        <tr>
+                                            <td class="mono">10:42</td>
+                                            <td>
+                                                <div style="font-weight: 600;">S. Gupta (Creator)</div>
+                                                <div style="color: var(--danger);">View Final Paper -> Blocked</div>
+                                                <div style="color: var(--text-muted); font-size: 11px;">Policy: Creator cannot view final assembly.</div>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="mono">09:15</td>
+                                            <td>
+                                                <div style="font-weight: 600;">Admin_01</div>
+                                                <div style="color: var(--danger);">Export Vault -> Blocked</div>
+                                                <div style="color: var(--text-muted); font-size: 11px;">Policy: Admins have no raw access.</div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="panel" style="margin-bottom: 0;">
+                            <div class="panel-header">Staff Audit Trail</div>
+                            <div class="table-wrap" style="max-height: 400px; overflow-y: auto;">
+                                <table style="font-size: 12px;">
+                                    <tbody id="table-staff-audit">
+                                        <tr>
+                                            <td style="padding: 8px;">
+                                                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                                    <span class="mono" style="color: var(--text-muted);">10:45:12</span>
+                                                    <span class="mono" style="color: var(--primary);">session_99x</span>
+                                                </div>
+                                                <div><strong>Dr. A. Sharma</strong> viewed <span class="mono">Q-1049</span></div>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 8px;">
+                                                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                                    <span class="mono" style="color: var(--text-muted);">10:42:01</span>
+                                                    <span class="mono" style="color: var(--primary);">session_82b</span>
+                                                </div>
+                                                <div><strong>S. Gupta</strong> attempted to view FINAL_PAPER</div>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 8px;">
+                                                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                                    <span class="mono" style="color: var(--text-muted);">09:15:22</span>
+                                                    <span class="mono" style="color: var(--primary);">session_11a</span>
+                                                </div>
+                                                <div><strong>Admin_01</strong> attempted vault export</div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
