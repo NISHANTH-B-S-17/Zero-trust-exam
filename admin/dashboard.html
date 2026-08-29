@@ -1331,14 +1331,25 @@
                 if (isLocalHost) {
                     errBanner.innerHTML = '<div><strong>Local backend not connected:</strong> Start backend at <code>http://127.0.0.1:8080</code> for live telemetry and data.</div>';
                     errBanner.classList.add('active');
+                    errBanner.style.display = 'block';
                     demoBanner.classList.remove('active');
                     dot.classList.add('offline');
                     text.textContent = 'Local backend not connected';
                 } else {
-                    errBanner.style.display = 'none';
-                    demoBanner.classList.add('active');
-                    dot.classList.remove('offline');
-                    text.textContent = 'Vercel Preview Mode';
+                    // Check if health endpoint responds on Vercel
+                    const healthData = await fetchAPI('/api/v1/health');
+                    if (healthData && healthData.status === 'ok') {
+                        errBanner.style.display = 'none';
+                        errBanner.classList.remove('active');
+                        dot.classList.remove('offline');
+                        text.textContent = 'Vercel API Connected';
+                    } else {
+                        errBanner.innerHTML = '<div><strong>Vercel API unavailable:</strong> Serverless backend is initializing or unreachable.</div>';
+                        errBanner.classList.add('active');
+                        errBanner.style.display = 'block';
+                        dot.classList.add('offline');
+                        text.textContent = 'Vercel API unavailable';
+                    }
                 }
                 if (!demoModeActive) {
                     demoModeActive = true;
