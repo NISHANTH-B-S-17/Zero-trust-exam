@@ -57,11 +57,24 @@ function initApp() {
     document.getElementById('login-form').addEventListener('submit', handleLogin);
     
     // Setup Exam UI controls
-    document.getElementById('btn-next').addEventListener('click', () => navigate(1));
-    document.getElementById('btn-prev').addEventListener('click', () => navigate(-1));
+    document.getElementById('btn-next').addEventListener('click', () => {
+        saveState();
+        navigate(1);
+    });
+    document.getElementById('btn-prev').addEventListener('click', () => {
+        saveState();
+        navigate(-1);
+    });
     document.getElementById('btn-flag').addEventListener('click', toggleFlag);
     document.getElementById('btn-clear').addEventListener('click', clearAnswer);
-    document.getElementById('header-submit-btn').addEventListener('click', () => finalSubmit(false));
+    document.getElementById('header-submit-btn').addEventListener('click', confirmSubmit);
+    document.getElementById('btn-cancel-submit').addEventListener('click', () => {
+        document.getElementById('submit-confirm-modal').classList.add('hidden');
+    });
+    document.getElementById('btn-confirm-submit').addEventListener('click', () => {
+        document.getElementById('submit-confirm-modal').classList.add('hidden');
+        finalSubmit(false);
+    });
     document.getElementById('exit-btn').addEventListener('click', () => {
         if(window.electronAPI) window.close();
         else location.reload();
@@ -74,12 +87,24 @@ function initApp() {
     
     // Context menu prevention
     document.addEventListener('contextmenu', e => e.preventDefault());
+
+    // Initialize mock times for login screen if backend logic doesn't provide it yet
+    const now = new Date();
+    document.getElementById('login-open-time').textContent = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    const examStart = new Date(now.getTime() + 15 * 60000);
+    document.getElementById('exam-start-time').textContent = examStart.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
 }
 
 // --- API & Auth ---
 
 async function handleLogin(e) {
     e.preventDefault();
+    const btn = document.getElementById('start-verification-btn');
+    const errBox = document.getElementById('login-error');
+    btn.disabled = true;
+    btn.textContent = 'Verifying...';
+    errBox.classList.add('hidden');
+    
     const uuid = document.getElementById('uuid').value.trim();
     
     try {
@@ -92,20 +117,20 @@ async function handleLogin(e) {
         if (!res.ok) throw new Error('Auth failed');
         
         const data = await res.json();
-        state.uuid = data.uuid || uuid; // fallback to uuid if backend doesn't send it
+        state.uuid = data.uuid || uuid;
         state.token = data.token || 'dummy-token';
         
         await fetchPaper();
     } catch (err) {
         console.error(err);
-        document.getElementById('login-error').classList.remove('hidden');
+        document.getElementById('login-error-text').textContent = "Authentication failed. Please check UUID or connection.";
+        errBox.classList.remove('hidden');
+        btn.disabled = false;
+        btn.textContent = 'Start Verification';
         
-        // Mock fallback for testing if backend is down
-        if (err.message === 'Failed to fetch' || err.message === 'Auth failed') {
-            console.warn("Backend down or auth failed. Proceeding in offline state.");
-            state.uuid = uuid;
-            // Removed generateMockPaper() to avoid creating fake data if backend offline, show offline UI state instead
-            showOfflineState();
+        // Removed offline mock fallback. Must actually fail if no backend.
+        if (err.message === 'Failed to fetch') {
+             document.getElementById('login-error-text').textContent = "Backend offline. Connect to local security node.";
         }
     }
 }
@@ -129,24 +154,13 @@ async function fetchPaper() {
         startExam();
     } catch (err) {
         console.error(err);
-        // Fallback
-        if (err.message === 'Failed to fetch') {
-            showOfflineState();
-        }
+        const errBox = document.getElementById('login-error');
+        document.getElementById('login-error-text').textContent = "Failed to load exam paper.";
+        errBox.classList.remove('hidden');
+        const btn = document.getElementById('start-verification-btn');
+        btn.disabled = false;
+        btn.textContent = 'Start Verification';
     }
-}
-
-function generateMockPaper() {
-    // Kept for structural integrity but shouldn't be called based on new rules
-}
-
-function showOfflineState() {
-    views.login.classList.remove('active');
-    views.login.classList.add('hidden');
-    views.exam.classList.remove('active');
-    views.exam.classList.add('hidden');
-    document.getElementById('offline-view').classList.remove('hidden');
-    document.getElementById('offline-view').classList.add('active');
 }
 
 // --- Exam Engine ---
@@ -158,12 +172,16 @@ function startExam() {
     views.exam.classList.add('active');
     
     // Header Setup
-    document.getElementById('live-timer').classList.remove('hidden');
-    document.getElementById('header-submit-btn').classList.remove('hidden');
+    document.getElementById('header-uuid').textContent = state.uuid;
     
-    const wmText = `${state.uuid} - ${new Date().toISOString().split('T')[0]}`;
-    document.getElementById('watermark-overlay').textContent = wmText;
+    // Wait slightly to let CSS render then apply watermark
+    setTimeout(() => {
+        // The exact forensic pattern expected by existing logic
+        const wmText = `${state.uuid} - ${new Date().toISOString().split('T')[0]}`;
+        document.getElementById('watermark-overlay').textContent = wmText;
+    }, 100);
 
+    // Initial render
     buildPalette();
     renderQuestion();
     startTimer();
@@ -177,9 +195,12 @@ function resumeExam() {
     views.exam.classList.remove('hidden');
     views.exam.classList.add('active');
     
-    document.getElementById('live-timer').classList.remove('hidden');
-    document.getElementById('header-submit-btn').classList.remove('hidden');
-    document.getElementById('watermark-overlay').textContent = state.uuid;
+    document.getElementById('header-uuid').textContent = state.uuid;
+    
+    setTimeout(() => {
+        const wmText = `${state.uuid} - ${new Date().toISOString().split('T')[0]}`;
+        document.getElementById('watermark-overlay').textContent = wmText;
+    }, 100);
     
     buildPalette();
     renderQuestion();
@@ -189,70 +210,160 @@ function resumeExam() {
 
 function renderQuestion() {
     const q = state.paper.questions[state.currentIndex];
-    
+    const total = state.paper.questions.length;
     state.visited[q.id] = true;
     
-    // Progress
-    const progress = ((state.currentIndex + 1) / state.paper.questions.length) * 100;
-    document.getElementById('progress-bar').style.width = `${progress}%`;
-
-    // Headers/Chips
-    document.getElementById('q-counter').textContent = `Q${state.currentIndex + 1} / ${state.paper.questions.length}`;
+    // Progress Left Panel
+    const answeredCount = Object.keys(state.responses).length;
+    document.getElementById('answered-count').textContent = answeredCount;
+    document.getElementById('total-count').textContent = total;
     
-    const parts = (q.metadata || 'General|Topic|Medium').split('|');
+    const progress = (answeredCount / total) * 100;
+    document.getElementById('progress-circle').setAttribute('stroke-dasharray', `${progress}, 100`);
+    document.getElementById('progress-text').textContent = `${Math.round(progress)}%`;
+
+    // Center Panel Header
+    document.getElementById('q-counter').textContent = `QUESTION ${state.currentIndex + 1} OF ${total}`;
+    
+    // Metadata parsing if available
+    const parts = (q.metadata || '').split('|');
     document.getElementById('q-subject').textContent = parts[0] || 'General';
     document.getElementById('q-topic').textContent = parts[1] || 'Topic';
-    document.getElementById('q-difficulty').textContent = parts[2] || 'Medium';
+    document.getElementById('q-difficulty').textContent = parts[2] || 'Normal';
     
+    // Question Content
     document.getElementById('q-text').textContent = q.text;
     
+    // Dynamic Answer Area
     const ansArea = document.getElementById('answer-area');
     ansArea.innerHTML = '';
     
-    if (q.type === 'mcq') {
-        q.options.forEach((opt, idx) => {
+    if (q.type === 'mcq' || q.type === 'single_choice' || q.type === 'true_false') {
+        // Safe fallback for options
+        const opts = q.options || (q.type === 'true_false' ? ['True', 'False'] : []);
+        
+        opts.forEach((opt, idx) => {
             const div = document.createElement('div');
             div.className = 'option-card';
-            if (state.responses[q.id] === idx.toString()) {
+            if (state.responses[q.id] === idx.toString() || state.responses[q.id] === opt) {
                 div.classList.add('selected');
             }
             
             const input = document.createElement('input');
             input.type = 'radio';
             input.name = `q-${q.id}`;
-            input.value = idx;
-            if (state.responses[q.id] === idx.toString()) input.checked = true;
+            input.value = opt; // Using value as text or index depending on existing logic
+            if (state.responses[q.id] === idx.toString() || state.responses[q.id] === opt) input.checked = true;
             
-            const label = document.createElement('label');
+            const label = document.createElement('span');
+            label.className = 'option-text';
             label.textContent = opt;
-            label.style.cursor = 'pointer';
-            label.style.flex = '1';
             
             div.appendChild(input);
             div.appendChild(label);
             
             div.addEventListener('click', () => {
-                state.responses[q.id] = idx.toString();
-                renderQuestion(); // re-render to update selection style
+                // If backend expects index vs string, adapt here. Assuming string option or idx for now
+                // Sticking to index as original app.js did for mcq
+                state.responses[q.id] = (q.type === 'true_false' ? opt : idx.toString());
+                renderQuestion(); 
                 updatePalette();
                 saveState();
             });
             
             ansArea.appendChild(div);
         });
-    } else if (q.type === 'numerical' || q.type === 'text') {
-        const input = document.createElement(q.type === 'numerical' ? 'input' : 'textarea');
-        if (q.type === 'numerical') input.type = 'number';
+    } else if (q.type === 'multiple_choice') {
+        const opts = q.options || [];
+        const currentAns = state.responses[q.id] || []; // Expected array
+        
+        opts.forEach((opt, idx) => {
+            const div = document.createElement('div');
+            div.className = 'option-card';
+            
+            const isSelected = Array.isArray(currentAns) && currentAns.includes(idx.toString());
+            if (isSelected) div.classList.add('selected');
+            
+            const input = document.createElement('input');
+            input.type = 'checkbox';
+            input.name = `q-${q.id}`;
+            if (isSelected) input.checked = true;
+            
+            const label = document.createElement('span');
+            label.className = 'option-text';
+            label.textContent = opt;
+            
+            div.appendChild(input);
+            div.appendChild(label);
+            
+            div.addEventListener('click', () => {
+                let newAns = Array.isArray(state.responses[q.id]) ? [...state.responses[q.id]] : [];
+                if (newAns.includes(idx.toString())) {
+                    newAns = newAns.filter(i => i !== idx.toString());
+                } else {
+                    newAns.push(idx.toString());
+                }
+                
+                if (newAns.length > 0) {
+                    state.responses[q.id] = newAns;
+                } else {
+                    delete state.responses[q.id];
+                }
+                
+                renderQuestion();
+                updatePalette();
+                saveState();
+            });
+            
+            ansArea.appendChild(div);
+        });
+    } else if (q.type === 'numerical' || q.type === 'short_answer') {
+        const input = document.createElement('input');
+        input.type = q.type === 'numerical' ? 'number' : 'text';
         input.className = 'answer-input';
         input.placeholder = 'Type your answer here...';
+        input.style.minHeight = '60px'; // Shorter for short answer
+        if (state.responses[q.id]) input.value = state.responses[q.id];
+        
+        let timeout = null;
+        input.addEventListener('input', (e) => {
+            state.responses[q.id] = e.target.value;
+            // Debounce save to avoid thrashing
+            clearTimeout(timeout);
+            timeout = setTimeout(() => {
+                updatePalette();
+                saveState();
+            }, 500);
+        });
+        ansArea.appendChild(input);
+        
+    } else if (q.type === 'text' || q.type === 'long_answer') {
+        const input = document.createElement('textarea');
+        input.className = 'answer-input';
+        input.placeholder = 'Type your comprehensive answer here...';
+        if (state.responses[q.id]) input.value = state.responses[q.id];
+        
+        let timeout = null;
+        input.addEventListener('input', (e) => {
+            state.responses[q.id] = e.target.value;
+            clearTimeout(timeout);
+            timeout = setTimeout(() => {
+                updatePalette();
+                saveState();
+            }, 500);
+        });
+        ansArea.appendChild(input);
+    } else {
+        // Fallback for unknown types
+        const input = document.createElement('textarea');
+        input.className = 'answer-input';
+        input.placeholder = 'Answer area (unsupported type fallback)';
         if (state.responses[q.id]) input.value = state.responses[q.id];
         
         input.addEventListener('input', (e) => {
             state.responses[q.id] = e.target.value;
-            updatePalette();
             saveState();
         });
-        
         ansArea.appendChild(input);
     }
     
@@ -260,7 +371,7 @@ function renderQuestion() {
     const flagBtn = document.getElementById('btn-flag');
     if (state.flags[q.id]) {
         flagBtn.classList.add('active');
-        flagBtn.textContent = 'Unmark';
+        flagBtn.textContent = 'Unmark Review';
     } else {
         flagBtn.classList.remove('active');
         flagBtn.textContent = 'Mark for Review';
@@ -268,7 +379,7 @@ function renderQuestion() {
 
     // Update Clear Button
     const clearBtn = document.getElementById('btn-clear');
-    if(state.responses[q.id] !== undefined && state.responses[q.id] !== '') {
+    if(state.responses[q.id] !== undefined && state.responses[q.id] !== '' && (!Array.isArray(state.responses[q.id]) || state.responses[q.id].length > 0)) {
         clearBtn.classList.remove('hidden');
     } else {
         clearBtn.classList.add('hidden');
@@ -279,9 +390,9 @@ function renderQuestion() {
     
     const nextBtn = document.getElementById('btn-next');
     if (state.currentIndex === state.paper.questions.length - 1) {
-        nextBtn.disabled = true; // or hide it, since submit is in header
+        nextBtn.textContent = 'Save (Last)';
     } else {
-        nextBtn.disabled = false;
+        nextBtn.textContent = 'Save & Next';
     }
     
     updatePalette();
@@ -313,14 +424,14 @@ function clearAnswer() {
 // --- Palette ---
 
 function buildPalette() {
-    const grid = document.getElementById('minimal-palette');
+    const grid = document.getElementById('question-palette');
     grid.innerHTML = '';
     
     state.paper.questions.forEach((q, idx) => {
         const btn = document.createElement('div');
-        btn.className = 'palette-dot';
+        btn.className = 'palette-btn';
         btn.id = `pal-${q.id}`;
-        btn.title = `Question ${idx + 1}`;
+        btn.textContent = idx + 1;
         
         btn.addEventListener('click', () => {
             state.currentIndex = idx;
@@ -338,19 +449,20 @@ function updatePalette() {
         const btn = document.getElementById(`pal-${q.id}`);
         if (!btn) return;
         
-        btn.className = 'palette-dot'; // reset
+        btn.className = 'palette-btn'; // reset
         
         if (idx === state.currentIndex) btn.classList.add('active');
         
+        const hasAnswer = state.responses[q.id] !== undefined && state.responses[q.id] !== '' && (!Array.isArray(state.responses[q.id]) || state.responses[q.id].length > 0);
+        
         if (state.flags[q.id]) {
-            btn.classList.add('flagged');
-        } else if (state.responses[q.id] !== undefined && state.responses[q.id] !== '') {
+            btn.classList.add('review');
+            if (hasAnswer) btn.classList.add('answered'); // Visual merging for answered+review handled by CSS
+        } else if (hasAnswer) {
             btn.classList.add('answered');
         } else if (state.visited[q.id]) {
             btn.classList.add('visited');
-        } else {
-            btn.classList.add('unvisited');
-        }
+        } // else default styling (unvisited)
     });
 }
 
@@ -386,6 +498,13 @@ function updateTimerDisplay() {
 function saveState() {
     state.lastSync = new Date().toISOString();
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    updateAutosaveStatus();
+}
+
+function updateAutosaveStatus() {
+    if (!state.lastSync) return;
+    const d = new Date(state.lastSync);
+    document.getElementById('status-autosave').textContent = `Last saved: ${d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'})}`;
 }
 
 // --- Background Sync & Security ---
@@ -429,11 +548,20 @@ async function syncWithBackend() {
 
 function updateConnectionStatus(isConnected) {
     const banner = document.getElementById('connection-banner');
+    const nodeStatus = document.getElementById('status-node');
     
     if (isConnected) {
         banner.classList.add('hidden');
+        if(nodeStatus) {
+            nodeStatus.textContent = 'Connected';
+            nodeStatus.className = 'value success';
+        }
     } else {
         banner.classList.remove('hidden');
+        if(nodeStatus) {
+            nodeStatus.textContent = 'Connection Lost';
+            nodeStatus.className = 'value warning';
+        }
     }
 }
 
@@ -446,11 +574,13 @@ function handleSecurityEvent(eventType) {
     };
     securityEventsQueue.push(event);
     
+    document.getElementById('status-integrity').textContent = 'Warning';
+    document.getElementById('status-integrity').className = 'value warning';
+    
     // Clear clipboard just in case
     navigator.clipboard.writeText('').catch(() => {});
     
     if (state.uuid) {
-        // Attempt immediate log to dedicated endpoint
         fetch(`${API_BASE}/log-security-event`, {
             method: 'POST',
             headers: { 
@@ -464,17 +594,19 @@ function handleSecurityEvent(eventType) {
 
 // --- Submit ---
 
-async function finalSubmit(isAuto = false) {
-    if (!isAuto) {
-        const unans = state.paper.questions.length - Object.keys(state.responses).length;
-        let msg = "Are you sure you want to submit your exam?";
-        if (unans > 0) {
-            msg = `You have ${unans} unanswered questions. Are you sure you want to submit?`;
-        }
-        const conf = confirm(msg);
-        if (!conf) return;
-    }
+function confirmSubmit() {
+    const answered = Object.keys(state.responses).length;
+    const total = state.paper.questions.length;
+    const review = Object.keys(state.flags).filter(k => state.flags[k]).length;
     
+    document.getElementById('confirm-answered').textContent = answered;
+    document.getElementById('confirm-unanswered').textContent = total - answered;
+    document.getElementById('confirm-review').textContent = review;
+    
+    document.getElementById('submit-confirm-modal').classList.remove('hidden');
+}
+
+async function finalSubmit(isAuto = false) {
     clearInterval(timerInterval);
     clearInterval(heartbeatInterval);
     
