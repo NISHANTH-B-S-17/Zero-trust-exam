@@ -1335,25 +1335,30 @@
                     demoBanner.classList.remove('active');
                     dot.classList.add('offline');
                     text.textContent = 'Local backend not connected';
+                    if (!demoModeActive) {
+                        demoModeActive = true;
+                        renderMockTables();
+                    }
                 } else {
                     // Check if health endpoint responds on Vercel
                     const healthData = await fetchAPI('/api/v1/health');
-                    if (healthData && healthData.status === 'ok') {
+                    if (healthData && (healthData.status === 'ok' || healthData.service)) {
                         errBanner.style.display = 'none';
                         errBanner.classList.remove('active');
                         dot.classList.remove('offline');
                         text.textContent = 'Vercel API Connected';
                     } else {
-                        errBanner.innerHTML = '<div><strong>Vercel API unavailable:</strong> Serverless backend is initializing or unreachable.</div>';
-                        errBanner.classList.add('active');
-                        errBanner.style.display = 'block';
-                        dot.classList.add('offline');
-                        text.textContent = 'Vercel API unavailable';
+                        // Vercel serverless preview fallback with mock tables
+                        errBanner.style.display = 'none';
+                        errBanner.classList.remove('active');
+                        demoBanner.classList.add('active');
+                        dot.classList.remove('offline');
+                        text.textContent = 'Vercel Preview Mode';
+                        if (!demoModeActive) {
+                            demoModeActive = true;
+                            renderMockTables();
+                        }
                     }
-                }
-                if (!demoModeActive) {
-                    demoModeActive = true;
-                    renderMockTables();
                 }
                 return;
             }
