@@ -1206,7 +1206,7 @@
                     `).join('');
                 }
 
-                const vList = vaultData.data || vaultData;
+                const vList = vaultData.questions || vaultData.data || vaultData;
                 const vBody = document.getElementById('table-vault');
                 if(vBody && Array.isArray(vList)) {
                     vBody.innerHTML = vList.map(q => `
@@ -1221,7 +1221,7 @@
                     `).join('');
                 }
 
-                const lsList = liveSessionsData?.data || liveSessionsData || [];
+                const lsList = liveSessionsData?.data || liveSessionsData?.value || liveSessionsData || [];
                 const lsBody = document.getElementById('table-live');
                 if (lsBody && Array.isArray(lsList)) {
                      lsBody.innerHTML = lsList.length > 0 ? lsList.map((s, i) => `
@@ -1239,7 +1239,7 @@
                     `).join('') : `<tr><td colspan="9" style="text-align:center;color:var(--text-muted);">No active sessions.</td></tr>`;
                 }
 
-                const aList = auditData?.data || auditData || [];
+                const aList = auditData?.logs || auditData?.data || auditData || [];
                 const aBody = document.getElementById('table-audit');
                 if (aBody && Array.isArray(aList)) {
                      aBody.innerHTML = aList.length > 0 ? aList.map((a) => {
@@ -1251,7 +1251,7 @@
                             <td>${a.timestamp || ''}</td>
                             <td>${a.event_type || ''}</td>
                             <td><span class="status-badge ${sevClass === 'warning' ? 'orange' : (sevClass === 'danger' ? 'red' : 'blue')}">${a.severity || ''}</span></td>
-                            <td class="mono" style="font-size:11px;">${a.uuid || ''}</td>
+                            <td class="mono" style="font-size:11px;">${a.uuid || a.student_uuid || ''}</td>
                             <td>${a.detail || a.details || ''}</td>
                         </tr>
                         `;
@@ -1260,7 +1260,7 @@
                 
                 // Update badges
                 const liveCountBadge = document.getElementById('badge-live');
-                if (liveCountBadge) liveCountBadge.textContent = lsList.filter(s => s.status === 'IN_PROGRESS' || s.status === 'ONLINE').length;
+                if (liveCountBadge) liveCountBadge.textContent = lsList.filter(s => s.status === 'IN_PROGRESS' || s.status === 'ONLINE').length || lsList.length;
                 
                 const auditCountBadge = document.getElementById('badge-audit');
                 if (auditCountBadge) auditCountBadge.textContent = aList.length;
@@ -1285,20 +1285,22 @@
             }
 
             // Update Dash Telemetry & Live Sessions Table
-            if (data.telemetry) {
+            const telemetryList = data.telemetry || rosterData.data || rosterData;
+            if (Array.isArray(telemetryList)) {
                 // Live badge count already handled above
 
                 let dashHtml = '';
                 
-                data.telemetry.forEach((c) => {
-                    let pingColor = c.ping === '-' ? 'var(--text-muted)' : (parseInt(c.ping) > 30 ? 'var(--warning)' : 'var(--text-main)');
+                telemetryList.slice(0, 5).forEach((c) => {
+                    let pingColor = c.ping === '-' || !c.ping ? 'var(--text-muted)' : (parseInt(c.ping) > 30 ? 'var(--warning)' : 'var(--text-main)');
+                    let pingValue = c.ping || 'N/A';
                     
                     dashHtml += `
                         <tr>
-                            <td class="mono">${c.roll || c.roll_no}</td>
-                            <td>${c.name}</td>
-                            <td>${renderBadges('', c.status)}</td>
-                            <td class="mono" style="color:${pingColor};">${c.ping}</td>
+                            <td class="mono">${c.roll || c.roll_no || ''}</td>
+                            <td>${c.name || ''}</td>
+                            <td>${renderBadges('', c.status || 'REGISTERED')}</td>
+                            <td class="mono" style="color:${pingColor};">${pingValue}</td>
                         </tr>
                     `;
                 });
@@ -1308,13 +1310,14 @@
             }
 
             // Update Audits
-            if (data.audit_logs) {
+            const dashAuditList = auditData?.logs || auditData?.data || data.audit_logs || auditData || [];
+            if (Array.isArray(dashAuditList)) {
                 // Audit badge already set earlier if possible
                 
                 let dAudHtml = '';
                 
                 // Reverse for timeline (newest top usually, depends on backend, assuming chronological array)
-                const reversedLogs = [...data.audit_logs].reverse();
+                const reversedLogs = [...dashAuditList].reverse().slice(0, 5);
 
                 reversedLogs.forEach(a => {
                     let tClass = a.severity === 'WARNING' ? 'warn' : (a.severity === 'DANGER' || a.severity === 'CRITICAL' ? 'danger' : 'info');
@@ -1327,7 +1330,7 @@
                 });
 
                 const tAud = document.getElementById('dash-audit');
-                if(tAud) tAud.innerHTML = dAudHtml;
+                if(tAud) tAud.innerHTML = dAudHtml || '<div class="t-item info"><div class="t-msg">No events</div></div>';
             }
         }
 
