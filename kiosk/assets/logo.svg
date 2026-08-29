@@ -1,0 +1,53 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="shieldGrad" x1="15" y1="10" x2="105" y2="110" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="30%" stop-color="#f0f4ff"/>
+      <stop offset="70%" stop-color="#e0e7ff"/>
+      <stop offset="100%" stop-color="#d8b4fe"/>
+    </linearGradient>
+    <linearGradient id="borderGrad" x1="0" y1="0" x2="120" y2="120" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#00f2fe"/>
+      <stop offset="40%" stop-color="#4facfe"/>
+      <stop offset="70%" stop-color="#a855f7"/>
+      <stop offset="100%" stop-color="#ec4899"/>
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="25" y1="20" x2="95" y2="100" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#fef08a"/>
+      <stop offset="50%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#b45309"/>
+    </linearGradient>
+    <linearGradient id="lockGrad" x1="45" y1="45" x2="75" y2="85" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="50%" stop-color="#e0e7ff"/>
+      <stop offset="100%" stop-color="#818cf8"/>
+    </linearGradient>
+    <filter id="glow" x="-10" y="-10" width="140" height="140" filterUnits="userSpaceOnUse">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Background Orbit / Circuit Ring -->
+  <circle cx="60" cy="60" r="54" stroke="url(#borderGrad)" stroke-width="1.5" stroke-dasharray="4 4" opacity="0.6"/>
+  <circle cx="60" cy="60" r="48" stroke="#a855f7" stroke-width="1" opacity="0.3"/>
+  
+  <!-- Outer Gold/Purple Shield Trim -->
+  <path d="M60 12 L98 28 V58 C98 82 78 102 60 108 C42 102 22 82 22 58 V28 L60 12 Z" fill="url(#goldGrad)" opacity="0.9"/>
+  
+  <!-- Inner White/Purple Shield Body -->
+  <path d="M60 17 L92 31 V56 C92 77 74 95 60 101 C46 95 28 77 28 56 V31 L60 17 Z" fill="url(#shieldGrad)" stroke="url(#borderGrad)" stroke-width="2.5"/>
+
+  <!-- Circuit Trace Accents -->
+  <path d="M12 60 H22 M98 60 H108 M60 6 V12 M60 108 V114" stroke="#4facfe" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="12" cy="60" r="2.5" fill="#00f2fe"/>
+  <circle cx="108" cy="60" r="2.5" fill="#ec4899"/>
+
+  <!-- Center Lock Icon -->
+  <rect x="44" y="54" width="32" height="26" rx="6" fill="url(#lockGrad)" stroke="#4338ca" stroke-width="2" filter="url(#glow)"/>
+  <path d="M50 54 V45 C50 39.5 54.5 35 60 35 C65.5 35 70 39.5 70 45 V54" stroke="url(#goldGrad)" stroke-width="4" stroke-linecap="round" fill="none"/>
+  
+  <!-- Keyhole -->
+  <circle cx="60" cy="64" r="3.5" fill="#312e81"/>
+  <path d="M58.5 65.5 L57 74 H63 L61.5 65.5 Z" fill="#312e81"/>
+</svg>
