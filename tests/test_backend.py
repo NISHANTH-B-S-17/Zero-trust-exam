@@ -44,7 +44,7 @@ def test_zwsp_uuid_encode_decode():
 def test_ambiguous_leak_returns_none():
     leak = "This is a leaked question with no watermarks."
     result = steganography.trace_leak(leak)
-    assert result["layer1_uuid"] is None
+    assert result["student_uuid"] is None
 
 # --- generator.py tests ---
 

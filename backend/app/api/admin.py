@@ -2,10 +2,12 @@ from fastapi import APIRouter, HTTPException, Depends, Header
 from typing import List, Dict, Any
 import aiosqlite
 import time
+import json
 
 from app.core.config import settings
 from app.db import database
 from app.schemas.base import SyncPayloadRequest, TraceLeakRequest
+from app.schemas.staff import StaffSecurityOverviewResponse, PolicyStatus
 from app.security import t5, crypto
 from app.forensic import tracer
 from app.services import audit
@@ -16,6 +18,37 @@ def verify_admin(x_admin_token: str = Header(...)):
     if x_admin_token != settings.ADMIN_TOKEN:
         raise HTTPException(status_code=403, detail="Invalid admin token")
     return True
+
+@router.get("/staff-security", response_model=StaffSecurityOverviewResponse)
+async def get_staff_security_overview(_: bool = Depends(verify_admin)):
+    async with aiosqlite.connect(settings.DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        
+        cursor = await db.execute('SELECT * FROM Staff_Users')
+        roles_overview = [dict(r) for r in await cursor.fetchall()]
+        
+        cursor = await db.execute('SELECT * FROM Reviewer_Assignments')
+        reviewer_assignments = [dict(r) for r in await cursor.fetchall()]
+        
+        cursor = await db.execute('SELECT * FROM Risk_Events')
+        risk_alerts = [dict(r) for r in await cursor.fetchall()]
+        
+        cursor = await db.execute('SELECT * FROM Blocked_Actions')
+        blocked_actions = [dict(r) for r in await cursor.fetchall()]
+        
+        cursor = await db.execute('SELECT * FROM Staff_Audit_Logs')
+        staff_audit_trail = [dict(r) for r in await cursor.fetchall()]
+        
+    policy = PolicyStatus()
+        
+    return {
+        "roles_overview": roles_overview,
+        "reviewer_assignments": reviewer_assignments,
+        "risk_alerts": risk_alerts,
+        "blocked_actions": blocked_actions,
+        "staff_audit_trail": staff_audit_trail,
+        "policy_status": policy.model_dump()
+    }
 
 @router.get("/dashboard")
 async def get_dashboard(_: bool = Depends(verify_admin)):
