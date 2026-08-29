@@ -1328,12 +1328,22 @@
             const demoBanner = document.getElementById('demo-banner');
 
             if (!data) {
-                // Completely Offline / Backend not connected
-                errBanner.innerHTML = '<div><strong>Backend not connected:</strong> Ensure API endpoint is reachable at <code>' + (isLocalHost ? 'http://127.0.0.1:8080/api/v1' : '/api/v1') + '</code> for live telemetry and data.</div>';
-                errBanner.classList.add('active');
-                demoBanner.classList.remove('active');
-                dot.classList.add('offline');
-                text.textContent = isLocalHost ? 'Local backend not connected' : 'Vercel API disconnected';
+                if (isLocalHost) {
+                    errBanner.innerHTML = '<div><strong>Local backend not connected:</strong> Start backend at <code>http://127.0.0.1:8080</code> for live telemetry and data.</div>';
+                    errBanner.classList.add('active');
+                    demoBanner.classList.remove('active');
+                    dot.classList.add('offline');
+                    text.textContent = 'Local backend not connected';
+                } else {
+                    errBanner.style.display = 'none';
+                    demoBanner.classList.add('active');
+                    dot.classList.remove('offline');
+                    text.textContent = 'Vercel Preview Mode';
+                }
+                if (!demoModeActive) {
+                    demoModeActive = true;
+                    renderMockTables();
+                }
                 return;
             }
 
