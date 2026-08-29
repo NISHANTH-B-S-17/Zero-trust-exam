@@ -1229,7 +1229,8 @@
         };
 
         // --- API Client ---
-        const API_BASE = 'http://127.0.0.1:8080';
+        const isLocalHost = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost';
+        const API_BASE = isLocalHost ? 'http://127.0.0.1:8080' : '';
         // Check for admin token in URL or use a default one for now
         const urlParams = new URLSearchParams(window.location.search);
         const adminToken = urlParams.get('token') || localStorage.getItem('admin_token') || 'admin-demo-token';
@@ -1325,18 +1326,18 @@
 
             if (!data) {
                 // Completely Offline / Backend not connected
-                errBanner.innerHTML = '<div><strong>Local backend not connected:</strong> Start backend at <code>http://127.0.0.1:8080</code> for live telemetry and data.</div>';
+                errBanner.innerHTML = '<div><strong>Backend not connected:</strong> Ensure API endpoint is reachable at <code>' + (API_BASE || window.location.origin) + '</code> for live telemetry and data.</div>';
                 errBanner.classList.add('active');
                 demoBanner.classList.remove('active');
                 dot.classList.add('offline');
-                text.textContent = 'Local backend not connected';
+                text.textContent = isLocalHost ? 'Local backend not connected' : 'Vercel API disconnected';
                 return;
             }
 
             // Online!
             errBanner.classList.remove('active');
             dot.classList.remove('offline');
-            text.textContent = '127.0.0.1:8080';
+            text.textContent = isLocalHost ? '127.0.0.1:8080' : 'Vercel API Connected';
             
             // Check if backend supports roster API, else use demo data
             const rosterData = await fetchAPI('/api/v1/admin/students');
