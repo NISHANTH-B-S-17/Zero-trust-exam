@@ -9,6 +9,18 @@ from app.main import app
 
 client = TestClient(app)
 
+def test_placeholder():
+    pass
+
+def test_admin_dashboard_auth():
+    # Test unauthenticated access (no token)
+    response = client.get("/api/v1/admin/dashboard")
+    assert response.status_code == 422 # FastAPI validation error for missing header
+    
+    # Test invalid token
+    response = client.get("/api/v1/admin/dashboard", headers={"x-admin-token": "invalid"})
+    assert response.status_code == 403
+
 def test_health_endpoint():
     response = client.get("/api/v1/health")
     assert response.status_code == 200
@@ -60,8 +72,6 @@ def test_staff_security_endpoint():
     from app.core.config import settings
     headers = {"x-admin-token": settings.ADMIN_TOKEN}
     
-    # Must hit endpoint after DB initializes. In this test environment, health endpoint call usually triggers enough lifespan setup, or we rely on the router. 
-    # For robust test, we hit the exact endpoint added in Phase 2
     with TestClient(app) as test_client:
         response = test_client.get("/api/v1/admin/staff-security", headers=headers)
         assert response.status_code == 200
