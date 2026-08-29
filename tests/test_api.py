@@ -9,8 +9,29 @@ from app.main import app
 
 client = TestClient(app)
 
-def test_placeholder():
-    pass
+# --- Vercel Static Frontend Deployment & Routing Tests ---
+
+def test_vercel_admin_deployment_files_exist():
+    import os
+    admin_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../admin'))
+    
+    index_html = os.path.join(admin_dir, 'index.html')
+    dashboard_html = os.path.join(admin_dir, 'dashboard.html')
+    vercel_json = os.path.join(admin_dir, 'vercel.json')
+    
+    assert os.path.exists(index_html), "admin/index.html must exist as entry point for Vercel deployment"
+    assert os.path.exists(dashboard_html), "admin/dashboard.html must exist"
+    assert os.path.exists(vercel_json), "admin/vercel.json must exist"
+    
+    import json
+    with open(vercel_json, 'r') as f:
+        config = json.load(f)
+        assert config.get("version") == 2
+        assert "rewrites" in config
+        rewrites = config["rewrites"]
+        assert len(rewrites) > 0
+        assert rewrites[0].get("destination") == "/dashboard.html"
+
 
 def test_admin_dashboard_auth():
     # Test unauthenticated access (no token)
