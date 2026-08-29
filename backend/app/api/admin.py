@@ -59,6 +59,9 @@ async def get_dashboard(_: bool = Depends(verify_admin)):
         cursor = await db.execute('SELECT COUNT(*) as cnt FROM Students')
         total_students = (await cursor.fetchone())['cnt']
         
+        cursor = await db.execute('SELECT COUNT(*) as cnt FROM Question_Vault')
+        vault_questions = (await cursor.fetchone())['cnt']
+
         recent_seconds = 300
         cutoff = int(time.time()) - recent_seconds
         cursor = await db.execute('SELECT COUNT(*) as cnt FROM Students WHERE updated_at >= ?', (cutoff,))
@@ -85,6 +88,10 @@ async def get_dashboard(_: bool = Depends(verify_admin)):
     return {
         "status": "active",
         "message": "Nivasha Admin Dashboard API",
+        "total_candidates": total_students,
+        "vault_questions": vault_questions,
+        "total_submissions": submitted_students,
+        "active_now": active_students,
         "stats": {
             "total_candidates": total_students,
             "active_candidates": active_students,
