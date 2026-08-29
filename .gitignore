@@ -1,0 +1,14 @@
+admin_token.txt
+nivasha.db
+backend/nivasha.db
+cert.pem
+key.pem
+__pycache__/
+.pytest_cache/
+.venv/
+node_modules/
+buffered_payload.enc
+*.log
+.env
+dist/
+build/

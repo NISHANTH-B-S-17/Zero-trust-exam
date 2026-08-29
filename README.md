@@ -1,54 +1,39 @@
-# PROJECT NIVASHA: ZERO TRUST EXAM ENGINE
+# Project Nivasha
 
-NIVASHA is an AI-powered zero-trust exam platform that protects question papers by enforcing minimum knowledge access, continuous behavioral risk scoring, and forensic leak tracing before, during, and after an exam.
+## Overview
+Project Nivasha is a secure, zero-trust system comprising a backend API, an admin dashboard, and a locked-down kiosk application. It incorporates forensic features like steganography for secure payload extraction.
 
-## MVP Phase 1 Status
-- **Backend Framework:** FastAPI (Python)
-- **Data Validation:** Pydantic v2
-- **Database:** SQLite
-- **Security:** Standard Python `cryptography` library for vault encryption concepts.
+## Setup Steps
+1. Clone the repository and navigate to the project directory.
+2. Install backend dependencies: `pip install -r backend/requirements.txt`
+3. Install kiosk dependencies: `cd kiosk && npm install && cd ..`
+4. Set up necessary certificates and keys as documented by individual components.
 
-### Features Implemented
-- Clean project structure
-- SQLite database schema (Users, Questions, AuditLogs, RiskEvents)
-- Pydantic models for data validation
-- Encrypted Question Vault service (AES-style using Fernet)
-- Minimum Knowledge Access Engine (Role-based checks)
-- Basic Insider Risk Engine (Rule-based heuristics)
-- Professional Light Theme Admin Dashboard
+## Commands to Run
+*   **Backend:** `cd backend && uvicorn main:app --reload` (or appropriate launch command per backend setup)
+*   **Admin Dashboard:** Serve the `admin/dashboard.html` file using a local web server (e.g., `python -m http.server 8080 --directory admin`).
+*   **Kiosk:** `cd kiosk && npm start`
 
-### Setup and Run Commands
+## Test Command
+To run all automated tests across the project:
+`pytest tests/`
 
-1. **Install dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
+## Demo Flow
+1.  Start the backend service.
+2.  Launch the admin dashboard and log in (or verify authorization tokens).
+3.  Launch the kiosk application.
+4.  Demonstrate the core workflow, including authentication, payload extraction (if applicable), and interaction between the kiosk and the backend via the admin system.
 
-2. **Run the backend application:**
-   ```bash
-   python main.py
-   # Or using uvicorn directly: uvicorn nivasha.api.main:app --reload
-   ```
-   The backend will start on `http://127.0.0.1:8000`.
+## Limitations
+*   Requires pre-configured network access and appropriate permissions for local servers.
+*   Kiosk lockdown mode may require administrative privileges on Windows (`lockdown.ps1`).
+*   Certificates must be manually generated and placed in the correct directories for HTTPS/WSS (if configured).
 
-3. **Seed Initial Data:**
-   Run this once to create demo users (Admin=1, Creator=2, Student=3):
-   ```bash
-   curl -X POST http://127.0.0.1:8000/seed
-   ```
-
-4. **Open the Admin Dashboard:**
-   Navigate in your browser to:
-   ```
-   http://127.0.0.1:8000/admin/dashboard
-   ```
-   *(Note: This uses a mock header bypass for the browser MVP. In a real app, this requires JWT).*
-
-5. **Run Tests:**
-   ```bash
-   pytest tests/
-   ```
-
-### Notes on MVP Simplifications
-- **Authentication:** Uses a mock `x-user-id` header for simplicity in API calls instead of full JWT flow.
-- **Key Management:** Uses an auto-generated symmetric key stored in memory/env for the encryption vault. Production requires KMS.
+## Final Demo Checklist
+- [ ] Backend starts without errors and connects to the database.
+- [ ] Admin dashboard loads and authenticates successfully.
+- [ ] Kiosk application launches in lockdown mode.
+- [ ] Kiosk can communicate securely with the backend.
+- [ ] Forensic/steganography features work as expected.
+- [ ] All unit tests pass.
+- [ ] Uncommitted runtime files are correctly ignored by `.gitignore`.

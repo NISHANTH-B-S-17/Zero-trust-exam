@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Depends, HTTPException, Header, status, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from typing import List
@@ -9,6 +9,7 @@ from nivasha.models import domain, schemas
 from nivasha.services.vault import vault
 from nivasha.services.access import access_engine, log_action
 from nivasha.services.risk import risk_engine
+from nivasha.services.forensics.steganography import SteganographyEngine
 
 import os
 
@@ -16,6 +17,7 @@ import os
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Nivasha Zero Trust Exam Engine", version="0.1.0")
+steg_engine = SteganographyEngine()
 
 # Setup templates
 template_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "templates")
@@ -70,6 +72,11 @@ def read_question(q_id: int, current_user: domain.User = Depends(get_current_use
     risk_engine.evaluate_question_access(db, current_user.id, q_id)
     
     decrypted_data = vault.decrypt(db_question.encrypted_content)
+    content = decrypted_data.get("text", "Error: Missing content")
+    
+    # Embed forensic watermarks before serving to student (or any reader depending on policy)
+    # In this MVP we embed it for all viewers to trace any leak
+    watermarked_content = steg_engine.embed_watermark(content, str(current_user.id))
     
     log_action(db, current_user.id, "VIEW", "Question", db_question.id)
     
@@ -77,8 +84,29 @@ def read_question(q_id: int, current_user: domain.User = Depends(get_current_use
         id=db_question.id,
         topic=db_question.topic,
         creator_id=db_question.creator_id,
-        content=decrypted_data.get("text", "Error: Missing content")
+        content=watermarked_content
     )
+
+@app.post("/forensics/analyze")
+def analyze_leak(text_payload: dict, current_user: domain.User = Depends(get_current_user)):
+    """
+    Endpoint for admins to submit leaked text and get an investigation lead.
+    """
+    if current_user.role != domain.RoleEnum.admin:
+        raise HTTPException(status_code=403, detail="Admin only")
+        
+    text = text_payload.get("text", "")
+    if not text:
+        raise HTTPException(status_code=400, detail="Missing text field")
+        
+    result = steg_engine.investigate_leak(text)
+    
+    return {
+        "confidence": result.confidence,
+        "suspect_id": result.suspect_id,
+        "evidence": result.evidence,
+        "investigation_notes": result.investigation_notes
+    }
 
 @app.get("/users/{user_id}/risk", response_model=schemas.RiskScoreResponse)
 def get_user_risk(user_id: int, current_user: domain.User = Depends(get_current_user), db: Session = Depends(get_db)):
