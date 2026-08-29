@@ -52,7 +52,47 @@ async def get_staff_security_overview(_: bool = Depends(verify_admin)):
 
 @router.get("/dashboard")
 async def get_dashboard(_: bool = Depends(verify_admin)):
-    return {"status": "active", "message": "Nivasha Admin Dashboard API"}
+    async with aiosqlite.connect(settings.DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        
+        # Candidate counts
+        cursor = await db.execute('SELECT COUNT(*) as cnt FROM Students')
+        total_students = (await cursor.fetchone())['cnt']
+        
+        recent_seconds = 300
+        cutoff = int(time.time()) - recent_seconds
+        cursor = await db.execute('SELECT COUNT(*) as cnt FROM Students WHERE updated_at >= ?', (cutoff,))
+        active_students = (await cursor.fetchone())['cnt']
+        
+        cursor = await db.execute('SELECT COUNT(*) as cnt FROM Submissions')
+        submitted_students = (await cursor.fetchone())['cnt']
+        
+        # Telemetry list
+        cursor = await db.execute('SELECT uuid, roll_no, name, status, updated_at FROM Students LIMIT 10')
+        students_rows = [dict(r) for r in await cursor.fetchall()]
+        
+        telemetry = []
+        for s in students_rows:
+            is_active = (s['updated_at'] or 0) >= cutoff
+            telemetry.append({
+                "uuid": s['uuid'],
+                "roll_no": s['roll_no'],
+                "name": s['name'],
+                "status": "ONLINE" if is_active else (s['status'] or "REGISTERED").upper(),
+                "ping": "Active" if is_active else f"{int(time.time()) - (s['updated_at'] or time.time())}s ago"
+            })
+            
+    return {
+        "status": "active",
+        "message": "Nivasha Admin Dashboard API",
+        "stats": {
+            "total_candidates": total_students,
+            "active_candidates": active_students,
+            "registered_idle": f"{total_students - submitted_students} / 0",
+            "submitted": submitted_students
+        },
+        "telemetry": telemetry
+    }
 
 @router.get("/live-sessions")
 async def get_live_sessions(_: bool = Depends(verify_admin)):
