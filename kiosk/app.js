@@ -22,7 +22,8 @@ let securityEventsQueue = [];
 // DOM Elements
 const views = {
     login: document.getElementById('login-view'),
-    exam: document.getElementById('exam-view')
+    exam: document.getElementById('exam-view'),
+    offline: document.getElementById('offline-view')
 };
 
 // Listeners
@@ -101,10 +102,10 @@ async function handleLogin(e) {
         
         // Mock fallback for testing if backend is down
         if (err.message === 'Failed to fetch' || err.message === 'Auth failed') {
-            console.warn("Backend down or auth failed. Generating mock paper for demo.");
+            console.warn("Backend down or auth failed. Proceeding in offline state.");
             state.uuid = uuid;
-            generateMockPaper();
-            startExam();
+            // Removed generateMockPaper() to avoid creating fake data if backend offline, show offline UI state instead
+            showOfflineState();
         }
     }
 }
@@ -130,22 +131,22 @@ async function fetchPaper() {
         console.error(err);
         // Fallback
         if (err.message === 'Failed to fetch') {
-            generateMockPaper();
-            startExam();
+            showOfflineState();
         }
     }
 }
 
 function generateMockPaper() {
-    state.paper = {
-        title: "Standard Assessment",
-        questions: [
-            { id: "q1", type: "mcq", text: "A car accelerates uniformly from rest to a speed of 20 m/s in 5 seconds. What is the acceleration of the car?", options: ["2 m/s²", "4 m/s²", "10 m/s²", "15 m/s²"], metadata: "Physics|Kinematics|Easy" },
-            { id: "q2", type: "mcq", text: "Which protocol is used for secure communication over the internet?", options: ["HTTP", "FTP", "HTTPS", "SMTP"], metadata: "Computer Science|Security|Medium" },
-            { id: "q3", type: "numerical", text: "Calculate the exact value of 25 * 4.", metadata: "Mathematics|Arithmetic|Easy" }
-        ]
-    };
-    state.remainingSeconds = 3600;
+    // Kept for structural integrity but shouldn't be called based on new rules
+}
+
+function showOfflineState() {
+    views.login.classList.remove('active');
+    views.login.classList.add('hidden');
+    views.exam.classList.remove('active');
+    views.exam.classList.add('hidden');
+    document.getElementById('offline-view').classList.remove('hidden');
+    document.getElementById('offline-view').classList.add('active');
 }
 
 // --- Exam Engine ---
@@ -448,15 +449,17 @@ function handleSecurityEvent(eventType) {
     // Clear clipboard just in case
     navigator.clipboard.writeText('').catch(() => {});
     
-    // Attempt immediate log to dedicated endpoint
-    fetch(`${API_BASE}/log-security-event`, {
-        method: 'POST',
-        headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${state.token}`
-        },
-        body: JSON.stringify({ student_uuid: state.uuid, ...event })
-    }).catch(e => { /* Will be handled by heartbeat queue if fails */ });
+    if (state.uuid) {
+        // Attempt immediate log to dedicated endpoint
+        fetch(`${API_BASE}/log-security-event`, {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${state.token}`
+            },
+            body: JSON.stringify({ student_uuid: state.uuid, ...event })
+        }).catch(e => { /* Will be handled by heartbeat queue if fails */ });
+    }
 }
 
 // --- Submit ---
