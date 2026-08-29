@@ -80,6 +80,11 @@ function createWindow() {
     }
   });
 
+  // Disable devTools in production, warn if open
+  mainWindow.webContents.on('devtools-opened', () => {
+    mainWindow.webContents.send('security-event', 'devtools_opened');
+  });
+
   mainWindow.loadFile('index.html');
 
   // Handle blur event (focus loss)

@@ -52,6 +52,18 @@
         </div>
     </div>
 
+    <!-- Offline View -->
+    <div id="offline-view" class="view hidden" style="justify-content: center; align-items: center; text-align: center;">
+        <div class="login-container" style="border-color: #f59e0b;">
+            <h1 style="color: #f59e0b; margin-bottom: 16px;">⚠️ Backend Offline</h1>
+            <p style="color: var(--text-muted); font-size: 15px; margin-bottom: 24px; line-height: 1.5;">
+                The connection to the local security node (127.0.0.1:8080) could not be established.<br><br>
+                Please ensure the backend is running and contact the invigilator.
+            </p>
+            <button onclick="location.reload()" class="btn outline-btn warning block-btn">Retry Connection</button>
+        </div>
+    </div>
+
     <!-- Exam View -->
     <div id="exam-view" class="view hidden">
         <div class="progress-bar-container">
