@@ -1257,6 +1257,7 @@
                         `;
                     }).join('') : `<tr><td colspan="5" style="text-align:center;color:var(--text-muted);">No logs.</td></tr>`;
                 }
+                
                 // Update badges
                 const liveCountBadge = document.getElementById('badge-live');
                 if (liveCountBadge) liveCountBadge.textContent = lsList.filter(s => s.status === 'IN_PROGRESS' || s.status === 'ONLINE').length;
@@ -1316,11 +1317,11 @@
                 const reversedLogs = [...data.audit_logs].reverse();
 
                 reversedLogs.forEach(a => {
-                    let tClass = a.type === 'warn' ? 'warn' : (a.type === 'danger' ? 'danger' : 'info');
+                    let tClass = a.severity === 'WARNING' ? 'warn' : (a.severity === 'DANGER' || a.severity === 'CRITICAL' ? 'danger' : 'info');
                     dAudHtml += `
                         <div class="t-item ${tClass}">
-                            <div class="t-time">${a.time}</div>
-                            <div class="t-msg">${a.msg}</div>
+                            <div class="t-time">${a.timestamp || ''}</div>
+                            <div class="t-msg">${a.detail || a.event_type || ''}</div>
                         </div>
                     `;
                 });
