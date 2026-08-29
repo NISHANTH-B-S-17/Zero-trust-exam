@@ -52,7 +52,29 @@ async def get_staff_security_overview(_: bool = Depends(verify_admin)):
 
 @router.get("/dashboard")
 async def get_dashboard(_: bool = Depends(verify_admin)):
-    return {"status": "active", "message": "Nivasha Admin Dashboard API"}
+    async with aiosqlite.connect(settings.DB_PATH) as db:
+        cursor = await db.execute('SELECT COUNT(*) FROM Students')
+        total_candidates = (await cursor.fetchone())[0]
+        
+        cursor = await db.execute('SELECT COUNT(*) FROM Question_Vault')
+        vault_questions = (await cursor.fetchone())[0]
+        
+        cursor = await db.execute('SELECT COUNT(*) FROM Submissions')
+        total_submissions = (await cursor.fetchone())[0]
+        
+        recent_seconds = 300
+        cutoff = int(time.time()) - recent_seconds
+        cursor = await db.execute('SELECT COUNT(*) FROM Students WHERE updated_at >= ?', (cutoff,))
+        active_now = (await cursor.fetchone())[0]
+
+    return {
+        "status": "active",
+        "message": "Nivasha Admin Dashboard API",
+        "total_candidates": total_candidates,
+        "vault_questions": vault_questions,
+        "total_submissions": total_submissions,
+        "active_now": active_now
+    }
 
 @router.get("/live-sessions")
 async def get_live_sessions(_: bool = Depends(verify_admin)):
