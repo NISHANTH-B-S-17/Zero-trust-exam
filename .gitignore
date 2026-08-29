@@ -1,5 +1,6 @@
 admin_token.txt
 nivasha.db
+backend/nivasha.db
 cert.pem
 key.pem
 __pycache__/
@@ -7,3 +8,7 @@ __pycache__/
 .venv/
 node_modules/
 buffered_payload.enc
+*.log
+.env
+dist/
+build/

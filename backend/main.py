@@ -6,8 +6,8 @@ import uuid
 import hashlib
 from typing import Dict, Any, List
 
-from .steganography import apply_layer1
-from .database import get_db, log_event
+from steganography import apply_layer1
+from database import get_db, log_event
 
 app = FastAPI(title="Nivasha Security Node")
 
