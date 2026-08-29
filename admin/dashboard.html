@@ -1345,8 +1345,13 @@
                     if (healthData && (healthData.status === 'ok' || healthData.service)) {
                         errBanner.style.display = 'none';
                         errBanner.classList.remove('active');
+                        demoBanner.classList.add('active');
                         dot.classList.remove('offline');
-                        text.textContent = 'Vercel API Connected';
+                        text.textContent = 'Vercel Preview Mode';
+                        if (!demoModeActive) {
+                            demoModeActive = true;
+                            renderMockTables();
+                        }
                     } else {
                         // Vercel serverless preview fallback with mock tables
                         errBanner.style.display = 'none';
