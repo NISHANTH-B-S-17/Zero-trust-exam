@@ -87,10 +87,14 @@ def test_database_creation():
 
 def test_firebase_config_exists():
     import os
-    assert os.path.exists("firebase.json")
-    assert os.path.exists(".firebaserc")
+    # Root directory path relative to tests/
+    root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+    firebase_path = os.path.join(root_dir, 'firebase.json')
+    firebaserc_path = os.path.join(root_dir, '.firebaserc')
+    assert os.path.exists(firebase_path)
+    assert os.path.exists(firebaserc_path)
     
-    with open("firebase.json", "r") as f:
+    with open(firebase_path, "r") as f:
         content = f.read()
         assert "admin" in content
         assert "dashboard.html" in content

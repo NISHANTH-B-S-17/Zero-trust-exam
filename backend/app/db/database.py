@@ -32,7 +32,7 @@ async def init_db():
         
         await db.execute('''CREATE TABLE IF NOT EXISTS Students (
             id INTEGER PRIMARY KEY AUTOINCREMENT, uuid TEXT UNIQUE, roll_no TEXT UNIQUE,
-            name TEXT, status TEXT, updated_at INTEGER)''')
+            name TEXT, status TEXT, cached_state_json TEXT, updated_at INTEGER)''')
             
         await db.execute('''CREATE TABLE IF NOT EXISTS Question_Vault (
             id INTEGER PRIMARY KEY, subject TEXT, topic TEXT, irt_difficulty REAL,
