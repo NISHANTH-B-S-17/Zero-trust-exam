@@ -55,6 +55,31 @@ async def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT, student_uuid TEXT, score REAL,
             receipt_hash TEXT, receipt_json TEXT, submitted_at INTEGER)''')
             
+        # --- Staff Security Tables ---
+        await db.execute('''CREATE TABLE IF NOT EXISTS Staff_Users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, role TEXT,
+            status TEXT, risk_score INTEGER, last_seen INTEGER)''')
+            
+        await db.execute('''CREATE TABLE IF NOT EXISTS Reviewer_Assignments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, reviewer_id INTEGER,
+            reviewer_name TEXT, question_ids TEXT, access_status TEXT,
+            last_viewed INTEGER, risk_score INTEGER)''')
+            
+        await db.execute('''CREATE TABLE IF NOT EXISTS Risk_Events (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, staff_user_id INTEGER,
+            staff_name TEXT, role TEXT, risk_score INTEGER, risk_level TEXT,
+            trigger_reason TEXT, action_taken TEXT, timestamp INTEGER)''')
+            
+        await db.execute('''CREATE TABLE IF NOT EXISTS Blocked_Actions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, staff_user_id INTEGER,
+            staff_name TEXT, attempted_action TEXT, reason_blocked TEXT,
+            policy_rule TEXT, timestamp INTEGER)''')
+            
+        await db.execute('''CREATE TABLE IF NOT EXISTS Staff_Audit_Logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, staff_user_id INTEGER,
+            staff_name TEXT, role TEXT, event TEXT, question_id INTEGER,
+            session_id TEXT, trace_token TEXT, timestamp INTEGER)''')
+            
         await db.commit()
 
 async def seed_demo_data():
@@ -79,6 +104,22 @@ async def seed_demo_data():
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', 
                 (q[0], q[1], q[2], q[3], q[4], q[5], q[6], encrypt_field(q[7]), encrypt_field(q[8]), encrypt_field(q[9])))
                 
+        # Seed Staff Data
+        await db.execute('INSERT INTO Staff_Users (name, role, status, risk_score, last_seen) VALUES (?, ?, ?, ?, ?)',
+                         ("Dr. Meera Rao", "QUESTION_CREATOR", "active", 10, now))
+        await db.execute('INSERT INTO Staff_Users (name, role, status, risk_score, last_seen) VALUES (?, ?, ?, ?, ?)',
+                         ("Prof. Arjun Sen", "REVIEWER", "active", 45, now))
+        await db.execute('INSERT INTO Staff_Users (name, role, status, risk_score, last_seen) VALUES (?, ?, ?, ?, ?)',
+                         ("Exam Cell Controller", "EXAM_CONTROLLER", "active", 0, now))
+        await db.execute('INSERT INTO Staff_Users (name, role, status, risk_score, last_seen) VALUES (?, ?, ?, ?, ?)',
+                         ("Security Officer", "SECURITY_ADMIN", "active", 75, now))
+                         
+        await db.execute('INSERT INTO Reviewer_Assignments (reviewer_id, reviewer_name, question_ids, access_status, last_viewed, risk_score) VALUES (?, ?, ?, ?, ?, ?)',
+                         (2, "Prof. Arjun Sen", "[1, 2]", "assigned", now, 45))
+                         
+        await db.execute('INSERT INTO Risk_Events (staff_user_id, staff_name, role, risk_score, risk_level, trigger_reason, action_taken, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                         (4, "Security Officer", "SECURITY_ADMIN", 75, "HIGH", "Unusual access pattern", "Alerted", now))
+
         await db.commit()
 
 async def fetch_all_questions() -> list:
