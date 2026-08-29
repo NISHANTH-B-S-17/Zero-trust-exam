@@ -3,6 +3,10 @@
 ## Overview
 Project Nivasha is a secure, zero-trust system comprising a backend API, an admin dashboard, and a locked-down kiosk application. It incorporates forensic features like steganography for secure payload extraction.
 
+## Deployment & Architecture Note
+*   **Vercel Hosting:** Vercel hosts the Admin Frontend UI statically.
+*   **Local Engine Required:** Full live telemetry, student monitoring, and T-5 crypto operations require running the backend engine locally at `http://127.0.0.1:8080`. Public web previews will display a clear "Local backend not connected" status until the local backend is started.
+
 ## Setup Steps
 1. Clone the repository and navigate to the project directory.
 2. Install backend dependencies: `pip install -r backend/requirements.txt`

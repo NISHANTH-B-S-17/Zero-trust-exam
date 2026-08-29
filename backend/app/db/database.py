@@ -2,6 +2,7 @@ import aiosqlite
 import json
 import time
 import base64
+import os
 import hashlib
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from app.core.config import settings
@@ -29,6 +30,7 @@ def decrypt_field(encoded_text: str) -> str:
         return ""
 
 async def init_db():
+    os.makedirs(os.path.dirname(os.path.abspath(settings.DB_PATH)), exist_ok=True)
     async with aiosqlite.connect(settings.DB_PATH) as db:
         await db.execute('PRAGMA journal_mode=WAL')
         

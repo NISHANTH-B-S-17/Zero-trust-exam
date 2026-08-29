@@ -87,16 +87,16 @@ def test_database_creation():
     
     asyncio.run(run_test())
 
-def test_firebase_config_exists():
+def test_vercel_config_exists():
     import os
-    # Root directory path relative to tests/
-    root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-    firebase_path = os.path.join(root_dir, 'firebase.json')
-    firebaserc_path = os.path.join(root_dir, '.firebaserc')
-    assert os.path.exists(firebase_path)
-    assert os.path.exists(firebaserc_path)
+    admin_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../admin'))
+    index_path = os.path.join(admin_dir, 'index.html')
+    dashboard_path = os.path.join(admin_dir, 'dashboard.html')
+    vercel_path = os.path.join(admin_dir, 'vercel.json')
+    assert os.path.exists(index_path)
+    assert os.path.exists(dashboard_path)
+    assert os.path.exists(vercel_path)
     
-    with open(firebase_path, "r") as f:
+    with open(vercel_path, "r") as f:
         content = f.read()
-        assert "admin" in content
-        assert "dashboard.html" in content
+        assert "index.html" in content

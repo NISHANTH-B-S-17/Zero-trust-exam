@@ -5,8 +5,21 @@ from fastapi.testclient import TestClient
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../backend')))
 
+import pytest
+import os
+import sys
+from fastapi.testclient import TestClient
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../backend')))
+
 from app.main import app
 
+@pytest.fixture(autouse=True)
+def init_test_db():
+    with TestClient(app) as test_client:
+        yield test_client
+
+client = TestClient(app)
 def test_placeholder():
     pass
 

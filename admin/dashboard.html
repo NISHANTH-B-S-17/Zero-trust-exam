@@ -1324,11 +1324,12 @@
             const demoBanner = document.getElementById('demo-banner');
 
             if (!data) {
-                // Completely Offline
+                // Completely Offline / Backend not connected
+                errBanner.innerHTML = '<div><strong>Local backend not connected:</strong> Start backend at <code>http://127.0.0.1:8080</code> for live telemetry and data.</div>';
                 errBanner.classList.add('active');
                 demoBanner.classList.remove('active');
                 dot.classList.add('offline');
-                text.textContent = 'Offline';
+                text.textContent = 'Local backend not connected';
                 return;
             }
 

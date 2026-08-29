@@ -3,294 +3,462 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZERO TRUST EXAM ENGINE</title>
+    <title>Zero Trust Exam Engine - Secure Examination Terminal</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div id="connection-banner" class="banner hidden">
-        ⚠️ Backend connection lost. Autosaving locally. Please do not close the application.
+        ⚠️ Connection lost. Autosaving locally. Please do not close the application.
     </div>
 
-    <!-- Login View -->
+    <!-- ========================================================= -->
+    <!-- SCREEN 1: STUDENT UUID LOGIN / VERIFICATION               -->
+    <!-- ========================================================= -->
     <div id="login-view" class="view active">
-        <!-- Top Bar -->
+        <!-- Top Header -->
         <header class="login-header">
-            <div class="header-left">
-                <div class="logo-shield">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <div class="brand-block">
+                <div class="logo-badge-glow">
+                    <img src="assets/logo.jpeg" alt="Zero Trust Shield Logo" class="shield-logo-img">
                 </div>
                 <div class="brand-text">
-                    <h1>ZERO TRUST EXAM ENGINE</h1>
+                    <h1>Zero Trust Exam Engine</h1>
                     <span class="subtitle">SECURE EXAMINATION TERMINAL</span>
                 </div>
             </div>
-            <div class="header-right">
-                <div class="time-block">
-                    <span class="label">Exam Starts At</span>
-                    <span class="value" id="exam-start-time">--:--</span>
+
+            <div class="schedule-card">
+                <div class="schedule-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                 </div>
-                <div class="time-block">
-                    <span class="label">Login Opens At</span>
-                    <span class="value" id="login-open-time">--:--</span>
+                <div class="schedule-info">
+                    <div class="time-item">
+                        <span class="label">Exam Starts At</span>
+                        <span class="value" id="exam-start-time">10:00 AM</span>
+                    </div>
+                    <div class="time-item">
+                        <span class="label">Login Opens At</span>
+                        <span class="value" id="login-open-time">09:50 AM</span>
+                    </div>
                 </div>
             </div>
         </header>
 
-        <div class="login-content">
-            <!-- Left Card: Instructions -->
-            <div class="instructions-card glass-card">
-                <h2>Exam Instructions</h2>
-                <ol class="instruction-list">
-                    <li>Keep your candidate ID / roll number ready.</li>
-                    <li>Verify your assigned exam center and seat number.</li>
-                    <li>Keep unauthorized devices and materials away.</li>
-                    <li>Once verification begins, remain at the examination terminal.</li>
-                    <li>Follow all examination instructions and do not leave until submitted.</li>
-                </ol>
-                
-                <div class="notice-box">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                    <div class="notice-text">
-                        <p>The exam cannot be started before the login window opens.</p>
-                        <p>Please wait for the scheduled time.</p>
+        <!-- Main Content 2-Column Layout -->
+        <main class="login-content">
+            <!-- Left Card: Exam Instructions -->
+            <section class="instructions-card card">
+                <div>
+                    <div class="instructions-header">
+                        <div class="instructions-icon-wrapper">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                        </div>
+                        <div class="instructions-title-block">
+                            <h2>Exam Instructions</h2>
+                            <p>Read the following instructions carefully before you proceed.</p>
+                        </div>
+                    </div>
+
+                    <div class="instruction-steps">
+                        <div class="step-item">
+                            <div class="step-num">1</div>
+                            <div class="step-text">Keep your assigned Student UUID ready.</div>
+                        </div>
+                        <div class="step-item">
+                            <div class="step-num">2</div>
+                            <div class="step-text">Verify your Student UUID before beginning verification.</div>
+                        </div>
+                        <div class="step-item">
+                            <div class="step-num">3</div>
+                            <div class="step-text">Keep unauthorized devices and materials away.</div>
+                        </div>
+                        <div class="step-item">
+                            <div class="step-num">4</div>
+                            <div class="step-text">Once verification begins, remain at the examination terminal.</div>
+                        </div>
+                        <div class="step-item">
+                            <div class="step-num">5</div>
+                            <div class="step-text">Follow all examination instructions and do not leave the terminal until submitted.</div>
+                        </div>
+                    </div>
+
+                    <div class="important-box">
+                        <div class="important-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 11 12 14 22 4"/></svg>
+                        </div>
+                        <div class="important-text">
+                            <h4>Important</h4>
+                            <p>The exam cannot be started before the login window opens. Please wait for the scheduled time.</p>
+                        </div>
                     </div>
                 </div>
 
-                <div class="card-footer">
-                    Your Integrity. Our Priority.
+                <div class="instructions-footer">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 11 12 14 22 4"/></svg>
+                    <span>Your Integrity. Our Priority.</span>
                 </div>
-            </div>
+            </section>
 
-            <!-- Right Card: Login -->
-            <div class="verification-card glass-card">
-                <div class="card-header-center">
-                    <div class="logo-shield large">
-                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <!-- Right Card: Student UUID Verification Panel -->
+            <section class="verification-card card">
+                <div class="verification-logo-frame">
+                    <img src="assets/logo.jpeg" alt="Zero Trust Shield" class="verification-logo-large">
+                </div>
+                <div class="verification-title-block">
+                    <h2>Zero Trust Exam Engine</h2>
+                    <p>SECURE EXAMINATION TERMINAL</p>
+                </div>
+
+                <form id="login-form" class="verification-section">
+                    <div class="section-label-banner">
+                        <div class="banner-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        </div>
+                        <div class="banner-text">
+                            <h3>Student Verification</h3>
+                            <p>Enter your Student UUID to begin the examination.</p>
+                        </div>
                     </div>
-                    <h2>ZERO TRUST EXAM ENGINE</h2>
-                    <span class="subtitle">SECURE EXAMINATION TERMINAL</span>
-                </div>
 
-                <div class="verification-section">
-                    <h3>Candidate Verification</h3>
-                    <form id="login-form">
-                        <div class="form-group">
-                            <label for="uuid">Student UUID</label>
-                            <input type="text" id="uuid" class="modern-input mono-input" placeholder="Enter your UUID" required autocomplete="off" spellcheck="false">
-                        </div>
-                        
-                        <div id="login-error" class="error-banner hidden">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                            <span id="login-error-text">Authentication failed. Check UUID or connection.</span>
-                        </div>
-                        
-                        <button type="submit" class="btn primary-btn gradient-btn block-btn" id="start-verification-btn">Start Verification</button>
-                    </form>
-                </div>
-            </div>
-        </div>
+                    <div class="input-group">
+                        <svg class="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        <input type="text" id="uuid" class="form-input mono" placeholder="Enter Student UUID (e.g. demo-uuid-1234)" required autocomplete="off" spellcheck="false">
+                    </div>
 
-        <footer class="system-status-bar">
-            <div class="status-left">
-                Secure Examination Terminal
+                    <div id="login-error" class="error-banner hidden">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                        <span id="login-error-text">Verification failed. Check Student UUID or network connection.</span>
+                    </div>
+
+                    <div class="submit-btn-wrapper">
+                        <button type="submit" id="start-verification-btn" class="btn primary-btn block-btn">
+                            <span>Start Verification</span>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                        </button>
+                    </div>
+
+                    <p class="notice-subtext">Your session will be securely monitored and recorded.</p>
+                </form>
+            </section>
+        </main>
+
+        <!-- Bottom Footer -->
+        <footer class="bottom-footer-bar">
+            <div class="footer-pill">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 11 12 14 22 4"/></svg>
+                <span>Secure Examination Terminal</span>
             </div>
-            <div class="status-right">
-                <div class="status-indicator">
-                    <span id="conn-status" class="dot green"></span>
-                    <span id="conn-text">Connected to local security node</span>
-                </div>
-            </div>
+            <span class="footer-divider">•</span>
+            <span>Offline Mode</span>
+            <span class="footer-divider">•</span>
+            <span>Local Exam Environment</span>
         </footer>
     </div>
 
-    <!-- Exam View -->
+
+    <!-- ========================================================= -->
+    <!-- SCREEN 2: LIVE EXAM TERMINAL                              -->
+    <!-- ========================================================= -->
     <div id="exam-view" class="view hidden">
         <!-- Top Header -->
         <header class="exam-header">
-            <div class="header-left">
-                <div class="logo-shield">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <div class="header-brand">
+                <div class="header-logo-badge">
+                    <img src="assets/logo.jpeg" alt="Zero Trust Shield" class="header-logo">
                 </div>
-                <div class="brand-text">
-                    <h1>ZERO TRUST EXAM ENGINE</h1>
-                    <span class="subtitle">SECURE EXAMINATION TERMINAL</span>
-                </div>
-            </div>
-            
-            <div class="header-center glass-panel">
-                <div class="info-group">
-                    <span class="label">STUDENT UUID</span>
-                    <span class="value mono" id="header-uuid">--</span>
+                <div class="header-title">
+                    <h1>Zero Trust Exam Engine</h1>
+                    <p>SECURE EXAMINATION TERMINAL</p>
                 </div>
             </div>
 
-            <div class="header-right glass-panel">
-                <div class="info-group">
-                    <span class="label">TIME REMAINING</span>
-                    <span class="value timer" id="live-timer">00:00:00</span>
+            <!-- Student Metadata Center Card: Student UUID ONLY -->
+            <div class="header-student-card">
+                <div class="student-card-item">
+                    <div class="student-card-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    </div>
+                    <div class="student-card-text">
+                        <span class="label">STUDENT UUID</span>
+                        <span class="value mono" id="header-uuid">demo-uuid-1234</span>
+                    </div>
                 </div>
-                <button id="header-submit-btn" class="btn primary-btn gradient-btn">Submit Exam</button>
+            </div>
+
+            <div class="header-actions">
+                <div class="timer-block">
+                    <div class="timer-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    </div>
+                    <div class="timer-text">
+                        <span class="label">TIME REMAINING</span>
+                        <span class="value" id="live-timer">00:00:00</span>
+                    </div>
+                </div>
+
+                <button id="header-submit-btn" class="btn primary-btn submit-exam-btn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                    <span>Submit Exam</span>
+                </button>
             </div>
         </header>
 
-        <div class="exam-layout">
-            <!-- Left Panel -->
-            <aside class="left-panel">
-                <div class="progress-card glass-card">
-                    <div class="circular-progress">
+        <!-- 3-Column Main Exam Layout -->
+        <main class="exam-main-layout">
+            <!-- Left Column: Progress + Guidelines -->
+            <aside class="left-col">
+                <div class="progress-card card">
+                    <span class="progress-title">PROGRESS</span>
+                    <div class="circular-progress-wrapper">
                         <svg viewBox="0 0 36 36" class="circular-chart">
                             <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                            <path class="circle" id="progress-circle" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                            <text x="18" y="20.35" class="percentage" id="progress-text">0%</text>
+                            <path class="circle-val" id="progress-circle" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            <text x="18" y="16" class="percentage-text" id="progress-text">0%</text>
+                            <text x="18" y="24" class="completed-subtext">Completed</text>
                         </svg>
                     </div>
-                    <div class="progress-text">
-                        <span id="answered-count">0</span> of <span id="total-count">0</span> questions
-                    </div>
+                    <span class="progress-counts-text"><span id="answered-count">0</span> of <span id="total-count">0</span> Questions</span>
                 </div>
 
-                <div class="exam-instructions-card glass-card">
-                    <h3>Instructions</h3>
-                    <ul>
-                        <li>Read each question carefully before answering.</li>
-                        <li>You can mark a question for review and come back later.</li>
-                        <li>You can change your answer before final submission.</li>
-                        <li>Do not refresh or close the window.</li>
-                        <li>All activities are monitored and recorded.</li>
-                    </ul>
+                <div class="guidelines-card card">
+                    <span class="guidelines-title">INSTRUCTIONS</span>
+                    <div class="guidelines-list">
+                        <div class="guideline-item">
+                            <svg class="guideline-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                            <span class="guideline-text">Read each question carefully before answering.</span>
+                        </div>
+                        <div class="guideline-item">
+                            <svg class="guideline-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+                            <span class="guideline-text">You can mark a question for review and come back later.</span>
+                        </div>
+                        <div class="guideline-item">
+                            <svg class="guideline-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                            <span class="guideline-text">You can change your answer any time before final submission.</span>
+                        </div>
+                        <div class="guideline-item">
+                            <svg class="guideline-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                            <span class="guideline-text">Do not refresh or close the window.</span>
+                        </div>
+                        <div class="guideline-item">
+                            <svg class="guideline-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                            <span class="guideline-text">All activities are monitored and recorded.</span>
+                        </div>
+                    </div>
                 </div>
             </aside>
 
-            <!-- Center Panel (Questions) -->
-            <main class="center-panel">
-                <div class="question-container glass-card">
+            <!-- Center Column: Dynamic Universal Question Renderer Card -->
+            <section class="center-col">
+                <div class="question-card card">
                     <div class="question-header-bar">
-                        <h2 id="q-counter">QUESTION 1 OF 10</h2>
-                        <div class="metadata-chips">
-                            <span class="chip" id="q-subject">Subject</span>
-                            <span class="chip" id="q-topic">Topic</span>
-                            <span class="chip" id="q-difficulty">Difficulty</span>
+                        <span class="q-counter-title" id="q-counter">QUESTION 1 OF 10</span>
+                        
+                        <div class="metadata-pills">
+                            <div class="meta-pill subject">
+                                <span>SUBJECT:</span>
+                                <strong id="q-subject">Physics</strong>
+                            </div>
+                            <div class="meta-pill topic">
+                                <span>TOPIC:</span>
+                                <strong id="q-topic">Dynamics</strong>
+                            </div>
+                            <div class="meta-pill difficulty">
+                                <span>DIFFICULTY:</span>
+                                <strong id="q-difficulty">Medium</strong>
+                                <div class="difficulty-bars">
+                                    <span class="diff-bar active"></span>
+                                    <span class="diff-bar active"></span>
+                                    <span class="diff-bar"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="header-right-actions">
+                            <button id="btn-flag" class="btn outline-btn">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+                                <span>Mark for Review</span>
+                            </button>
                         </div>
                     </div>
 
-                    <div class="question-scroll-area">
-                        <div class="question-content" id="q-text">
-                            Loading question...
+                    <div class="question-body-scroll">
+                        <div class="question-text-box" id="q-text">
+                            Loading question text...
                         </div>
-                        
-                        <!-- Anti-leak watermark underlay -->
+
+                        <!-- Forensic Watermark Layer -->
                         <div id="watermark-overlay" class="watermark"></div>
 
-                        <div class="answer-area" id="answer-area">
-                            <!-- Dynamic content -->
+                        <!-- Universal Answer Renderer Area -->
+                        <div id="answer-area" class="answer-options-wrapper">
+                            <!-- Injected dynamically by QuestionRenderer -->
+                        </div>
+
+                        <div id="answer-status-notice" class="status-info-banner">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                            <span id="answer-status-text">You have not answered this question yet.</span>
                         </div>
                     </div>
 
-                    <div class="question-actions">
-                        <div class="action-group-left">
-                            <button id="btn-prev" class="btn outline-btn">Previous</button>
-                            <button id="btn-clear" class="btn ghost-btn hidden">Clear Response</button>
+                    <div class="question-footer-bar">
+                        <div class="footer-actions-left">
+                            <button id="btn-prev" class="btn outline-btn">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                                <span>Previous</span>
+                            </button>
                         </div>
-                        <div class="action-group-right">
-                            <button id="btn-flag" class="btn outline-btn warning">Mark for Review</button>
-                            <button id="btn-next" class="btn primary-btn gradient-btn">Save & Next</button>
+
+                        <div class="footer-actions-right">
+                            <button id="btn-clear" class="btn ghost-btn hidden">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                                <span>Clear Response</span>
+                            </button>
+                            <button id="btn-next" class="btn primary-btn">
+                                <span>Save & Next</span>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                            </button>
                         </div>
                     </div>
                 </div>
-            </main>
+            </section>
 
-            <!-- Right Panel (Palette) -->
-            <aside class="right-panel">
-                <div class="palette-card glass-card">
-                    <div class="palette-header">
-                        <h3>Question Palette</h3>
+            <!-- Right Column: Palette + Legend -->
+            <aside class="right-col">
+                <div class="palette-card card">
+                    <div class="palette-header-row">
+                        <span class="palette-title">QUESTION PALETTE</span>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
                     </div>
-                    <div class="palette-grid" id="question-palette">
-                        <!-- Grid buttons generated here -->
+
+                    <div class="palette-grid-box" id="question-palette">
+                        <!-- Grid buttons generated dynamically -->
                     </div>
-                    <div class="palette-legend">
-                        <div class="legend-item"><span class="legend-dot answered"></span> Answered</div>
-                        <div class="legend-item"><span class="legend-dot unvisited"></span> Unvisited</div>
-                        <div class="legend-item"><span class="legend-dot visited"></span> Visited</div>
-                        <div class="legend-item"><span class="legend-dot review"></span> Marked for Review</div>
+
+                    <div class="palette-legend-box">
+                        <div class="legend-row">
+                            <span class="legend-dot ans"></span>
+                            <span>Answered</span>
+                        </div>
+                        <div class="legend-row">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="#f59e0b"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15" stroke="#f59e0b" stroke-width="2"/></svg>
+                            <span>Marked for Review</span>
+                        </div>
+                        <div class="legend-row">
+                            <span class="legend-dot unvis"></span>
+                            <span>Unvisited</span>
+                        </div>
+                        <div class="legend-row">
+                            <span class="legend-dot vis"></span>
+                            <span>Visited</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="secure-info-card">
+                    <div class="secure-icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 11 12 14 22 4"/></svg>
+                    </div>
+                    <div class="secure-card-text">
+                        <h4>SECURE ENVIRONMENT</h4>
+                        <p>This is a secure examination. All activities are monitored and recorded.</p>
                     </div>
                 </div>
             </aside>
-        </div>
+        </main>
 
+        <!-- Bottom Fixed Security Status Bar -->
         <footer class="security-status-bar">
-            <div class="sec-item">
-                <span class="label">SECURITY NODE</span>
-                <span class="value success" id="status-node">Connected</span>
+            <div class="sec-node-item">
+                <svg class="sec-node-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 11 12 14 22 4"/></svg>
+                <div class="sec-node-text">
+                    <span class="label">SECURITY NODE</span>
+                    <span class="value connected" id="status-node">Connected</span>
+                </div>
             </div>
-            <div class="sec-item">
-                <span class="label">AUTO-SAVE</span>
-                <span class="value" id="status-autosave">Last saved: --:--</span>
+
+            <div class="sec-node-item">
+                <svg class="sec-node-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                <div class="sec-node-text">
+                    <span class="label">AUTO-SAVE</span>
+                    <span class="value" id="status-autosave">Last saved: --:--</span>
+                </div>
             </div>
-            <div class="sec-item">
-                <span class="label">SESSION INTEGRITY</span>
-                <span class="value success" id="status-integrity">Verified</span>
+
+            <div class="sec-node-item">
+                <svg class="sec-node-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                <div class="sec-node-text">
+                    <span class="label">SESSION INTEGRITY</span>
+                    <span class="value connected" id="status-integrity">Verified & Protected</span>
+                </div>
             </div>
-            <div class="sec-item">
-                <span class="label">KEYBOARD LOCKED</span>
-                <span class="value active" id="status-keyboard">Active</span>
+
+            <div class="sec-node-item">
+                <svg class="sec-node-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="6" y1="8" x2="6" y2="8"/><line x1="10" y1="8" x2="10" y2="8"/><line x1="14" y1="8" x2="14" y2="8"/><line x1="18" y1="8" x2="18" y2="8"/><line x1="8" y1="16" x2="16" y2="16"/></svg>
+                <div class="sec-node-text">
+                    <span class="label">KEYBOARD LOCKED</span>
+                    <span class="value">Active</span>
+                </div>
             </div>
-            <div class="sec-item">
-                <span class="label">FULLSCREEN MODE</span>
-                <span class="value active" id="status-fullscreen">Active</span>
+
+            <div class="sec-node-item">
+                <svg class="sec-node-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+                <div class="sec-node-text">
+                    <span class="label">FULLSCREEN MODE</span>
+                    <span class="value">Active</span>
+                </div>
             </div>
         </footer>
     </div>
 
     <!-- Submit Confirmation Modal -->
-    <div id="submit-confirm-modal" class="modal hidden">
-        <div class="modal-content glass-card">
+    <div id="submit-confirm-modal" class="modal-overlay hidden">
+        <div class="modal-content-card card">
             <h2>SUBMIT EXAM?</h2>
-            <div class="submit-summary">
-                <div class="summary-row">
-                    <span>Answered:</span>
+            <div class="modal-summary-box">
+                <div class="modal-summary-row">
+                    <span>Answered Questions:</span>
                     <span id="confirm-answered" class="fw-bold">0</span>
                 </div>
-                <div class="summary-row">
-                    <span>Unanswered:</span>
-                    <span id="confirm-unanswered" class="fw-bold text-warning">0</span>
+                <div class="modal-summary-row">
+                    <span>Unanswered Questions:</span>
+                    <span id="confirm-unanswered" class="fw-bold" style="color: #d97706;">0</span>
                 </div>
-                <div class="summary-row">
+                <div class="modal-summary-row">
                     <span>Marked for Review:</span>
-                    <span id="confirm-review" class="fw-bold text-purple">0</span>
+                    <span id="confirm-review" class="fw-bold" style="color: #7c3aed;">0</span>
                 </div>
             </div>
-            <p class="warning-text">You will not be able to change your answers after submission.</p>
-            <div class="modal-actions">
+            <p style="font-size: 13px; color: #64748b; margin-bottom: 20px;">You will not be able to modify your answers after final submission.</p>
+            <div class="modal-actions-row">
                 <button id="btn-cancel-submit" class="btn outline-btn">Cancel</button>
-                <button id="btn-confirm-submit" class="btn primary-btn gradient-btn">Submit Exam</button>
+                <button id="btn-confirm-submit" class="btn primary-btn">Submit Exam</button>
             </div>
         </div>
     </div>
 
     <!-- Receipt Modal -->
-    <div id="receipt-modal" class="modal hidden">
-        <div class="modal-content glass-card success-modal">
-            <div class="success-icon-large">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+    <div id="receipt-modal" class="modal-overlay hidden">
+        <div class="modal-content-card card">
+            <div style="width: 56px; height: 56px; border-radius: 50%; background: #ecfdf5; color: #10b981; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
             </div>
             <h2>Submission Accepted</h2>
-            <div class="receipt-details">
-                <div class="receipt-row">
-                    <span>Status:</span> <span class="badge success">RECEIVED</span>
+            <div class="modal-summary-box" style="text-align: left;">
+                <div class="modal-summary-row">
+                    <span>Status:</span> <span style="background: #ecfdf5; color: #166534; padding: 2px 10px; border-radius: 9999px; font-weight: 700; font-size: 12px;">RECEIVED</span>
                 </div>
-                <div class="receipt-row hidden" id="score-row">
+                <div class="modal-summary-row hidden" id="score-row">
                     <span>Score:</span> <span id="receipt-score">--</span>
                 </div>
-                <div class="receipt-row">
+                <div class="modal-summary-row">
                     <span>Timestamp:</span> <span id="receipt-time">--</span>
                 </div>
-                <div class="receipt-hash-box">
-                    <div class="hash-label">RECEIPT HASH</div>
-                    <div class="hash-value mono-text" id="receipt-hash">Generating...</div>
+                <div style="padding-top: 12px;">
+                    <span style="font-size: 10px; font-weight: 700; color: #64748b; letter-spacing: 1px; display: block; margin-bottom: 6px;">RECEIPT HASH</span>
+                    <div id="receipt-hash" class="mono" style="font-size: 11px; word-break: break-all; background: white; padding: 10px; border: 1px solid #e2e8f0; border-radius: 6px;">Generating...</div>
                 </div>
             </div>
-            <p class="info-text">Wait for the invigilator before exiting the kiosk.</p>
+            <p style="font-size: 13px; color: #64748b; margin-bottom: 20px;">You may now notify the invigilator and exit the terminal.</p>
             <button id="exit-btn" class="btn outline-btn block-btn">Exit Terminal</button>
         </div>
     </div>
