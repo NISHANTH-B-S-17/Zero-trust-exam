@@ -1230,7 +1230,7 @@
 
         // --- API Client ---
         const isLocalHost = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost';
-        const API_BASE = isLocalHost ? 'http://127.0.0.1:8080/api/v1' : '/api/v1';
+        const API_BASE = isLocalHost ? 'http://127.0.0.1:8080' : '';
         // Check for admin token in URL or use a default one for now
         const urlParams = new URLSearchParams(window.location.search);
         const adminToken = urlParams.get('token') || localStorage.getItem('admin_token') || 'admin-demo-token';

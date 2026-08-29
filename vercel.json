@@ -31,12 +31,16 @@
       "dest": "admin/dashboard.html"
     },
     {
-      "src": "/kiosk/(.*)",
-      "dest": "kiosk/$1"
+      "src": "/admin/(.*)",
+      "dest": "admin/$1"
     },
     {
       "src": "/kiosk",
       "dest": "kiosk/index.html"
+    },
+    {
+      "src": "/kiosk/(.*)",
+      "dest": "kiosk/$1"
     },
     {
       "src": "/$",
