@@ -1229,7 +1229,8 @@
         };
 
         // --- API Client ---
-        const API_BASE = 'http://127.0.0.1:8080';
+        const isVercel = window.location.hostname.includes('vercel.app') || (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1');
+        const API_BASE = isVercel ? '' : 'http://127.0.0.1:8080';
         // Check for admin token in URL or use a default one for now
         const urlParams = new URLSearchParams(window.location.search);
         const adminToken = urlParams.get('token') || localStorage.getItem('admin_token') || 'admin-demo-token';

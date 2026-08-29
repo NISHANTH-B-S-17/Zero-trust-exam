@@ -1,5 +1,6 @@
 // Constants
-const API_BASE = 'http://127.0.0.1:8080/api/v1/student';
+const isVercel = window.location.hostname.includes('vercel.app') || (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1');
+const API_BASE = isVercel ? '/api/v1/student' : 'http://127.0.0.1:8080/api/v1/student';
 const STORAGE_KEY = 'ZERO_TRUST_EXAM_SESSION_V6';
 
 // State Architecture
