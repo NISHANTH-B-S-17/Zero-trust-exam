@@ -45,11 +45,63 @@ def test_student_fetch_paper_no_secrets():
             assert "secret" not in q
             assert "encryption_key" not in q
             
-def test_submit_returns_receipt_hash():
-    payload = {"student_uuid": "demo-uuid-1234", "answers": {"1": "11"}}
-    response = client.post("/api/v1/student/submit", json=payload)
-    if response.status_code == 200:
-        assert "receipt_hash" in response.json()
+def test_kiosk_full_student_flow():
+    # 1. Authenticate using roll_number (kiosk app.js pattern)
+    auth_resp = client.post("/api/v1/student/authenticate", json={"roll_number": "ROLL001"})
+    assert auth_resp.status_code == 200
+    auth_data = auth_resp.json()
+    assert auth_data["ok"] is True
+    student_uuid = auth_data["student_uuid"]
+    assert student_uuid == "demo-uuid-1234"
+
+    # 2. Fetch paper via GET with student_uuid query
+    fetch_get_resp = client.get(f"/api/v1/student/fetch-paper?student_uuid={student_uuid}")
+    assert fetch_get_resp.status_code == 200
+    fetch_get_data = fetch_get_resp.json()
+    assert fetch_get_data["ok"] is True
+    assert "paper" in fetch_get_data
+    assert "questions" in fetch_get_data
+
+    # 3. Fetch paper via POST with body { "student_uuid": "..." } (kiosk fetchPaper pattern)
+    fetch_post_resp = client.post("/api/v1/student/fetch-paper", json={"student_uuid": student_uuid})
+    assert fetch_post_resp.status_code == 200
+    fetch_post_data = fetch_post_resp.json()
+    assert fetch_post_data["ok"] is True
+
+    # 4. Heartbeat sync
+    heartbeat_resp = client.post("/api/v1/student/heartbeat", json={
+        "student_uuid": student_uuid,
+        "active_question_id": 1,
+        "responses": {"1": "11"},
+        "remaining_seconds": 3500,
+        "status": "active"
+    })
+    assert heartbeat_resp.status_code == 200
+    assert heartbeat_resp.json()["ok"] is True
+
+    # 5. Log Security Event
+    sec_resp = client.post("/api/v1/student/log-security-event", json={
+        "student_uuid": student_uuid,
+        "type": "clipboard_attempt_copy",
+        "question_idx": 0
+    })
+    assert sec_resp.status_code == 200
+    assert sec_resp.json()["ok"] is True
+
+    # 6. Submit Exam (kiosk responses payload pattern)
+    submit_resp = client.post("/api/v1/student/submit", json={
+        "student_uuid": student_uuid,
+        "responses": {"1": "11"},
+        "remaining_seconds": 3400,
+        "auto_submit": False
+    })
+    assert submit_resp.status_code == 200
+    submit_data = submit_resp.json()
+    assert submit_data["ok"] is True
+    assert "receipt_hash" in submit_data
+    assert "score" in submit_data
+    assert "correct" in submit_data
+    assert "total" in submit_data
         
 def test_forensic_endpoint_safe_language():
     # Test that admin trace endpoint uses safe language
