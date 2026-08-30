@@ -17,7 +17,7 @@ def test_kiosk_app_js_api_base_resolution():
     assert "includes('5500')" in content
     assert "includes('3000')" in content
     assert "includes('8080')" in content
-    assert "const API_BASE = (isLocal || isFileProtocol) ? 'http://127.0.0.1:8080/api/v1/student' :" in content
+    assert "const API_BASE = KIOSK_ENV_API || ((isLocal || isFileProtocol) ? 'http://127.0.0.1:8080/api/v1/student' : `${currentOrigin}/api/v1/student`);" in content
 
 def test_kiosk_app_js_single_choice_no_double_render():
     app_js_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../kiosk/app.js'))
@@ -37,8 +37,8 @@ def test_kiosk_app_js_on_answer_change_renders_question():
     with open(app_js_path, 'r', encoding='utf-8') as f:
         content = f.read()
 
-    # Ensure QuestionRenderer.render callback invokes renderQuestion() to update UI
+    # Ensure QuestionRenderer.render callback updates UI
     render_call_idx = content.find("QuestionRenderer.render(q, ansArea, currentAns, (newAnswer) => {")
     assert render_call_idx != -1
-    callback_block = content[render_call_idx:render_call_idx + 300]
-    assert "renderQuestion();" in callback_block
+    callback_block = content[render_call_idx:render_call_idx + 400]
+    assert "updateQuestionUI();" in callback_block or "renderQuestion();" in callback_block

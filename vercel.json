@@ -1,4 +1,5 @@
 {
+  "version": 2,
   "rewrites": [
     {
       "source": "/api/(.*)",
@@ -11,6 +12,18 @@
     {
       "source": "/dashboard",
       "destination": "/admin/dashboard.html"
+    },
+    {
+      "source": "/dashboard/(.*)",
+      "destination": "/admin/dashboard.html"
+    },
+    {
+      "source": "/kiosk",
+      "destination": "/kiosk/index.html"
+    },
+    {
+      "source": "/kiosk/(.*)",
+      "destination": "/kiosk/index.html"
     }
   ]
 }
