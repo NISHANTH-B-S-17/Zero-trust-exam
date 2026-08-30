@@ -14,15 +14,11 @@ from app.services import audit
 
 router = APIRouter()
 
-async def verify_admin(x_admin_token: Optional[str] = Header(None), token: Optional[str] = Query(None)):
-    try:
-        await database.ensure_db_initialized()
-    except Exception:
-        pass
-    token_val = x_admin_token or token or "admin-demo-token"
+def verify_admin(x_admin_token: str = Header(...)):
+    # Validate against configured ADMIN_TOKEN or fallback admin-demo-token
     valid_tokens = {settings.ADMIN_TOKEN, "admin-demo-token"}
-    if token_val not in valid_tokens:
-        raise HTTPException(status_code=403, detail="Invalid or missing admin authentication token")
+    if x_admin_token not in valid_tokens:
+        raise HTTPException(status_code=403, detail="Invalid admin token")
     return True
 
 @router.get("/staff-security", response_model=StaffSecurityOverviewResponse)
