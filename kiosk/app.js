@@ -929,4 +929,15 @@ function showReceipt(data) {
     
     const modal = document.getElementById('receipt-modal');
     if (modal) modal.classList.remove('hidden');
+
+    const exitBtn = document.getElementById('receipt-exit-btn');
+    if (exitBtn) {
+        exitBtn.onclick = () => {
+            if (window.electronAPI && typeof window.electronAPI.exitTerminal === 'function') {
+                window.electronAPI.exitTerminal();
+            } else {
+                window.close();
+            }
+        };
+    }
 }

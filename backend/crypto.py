@@ -40,8 +40,9 @@ def decrypt_payload(token: bytes, password: str) -> bytes:
     secure_wipe(key)
     return pt
 
-def secure_wipe(key: bytes):
-    """Zeroize the key material in memory where possible in Python."""
-    if isinstance(key, bytearray):
-        for i in range(len(key)):
-            key[i] = 0
+def secure_wipe(key):
+    """Zeroize key material in memory after converting immutable inputs to mutable bytearray."""
+    if isinstance(key, (bytes, bytearray, memoryview)):
+        mutable_buf = bytearray(key) if not isinstance(key, bytearray) else key
+        for i in range(len(mutable_buf)):
+            mutable_buf[i] = 0

@@ -4,13 +4,14 @@ const { exec } = require('child_process');
 
 let mainWindow;
 
-// VM Detection function
+// VM Detection function (Modernized PowerShell CIM Query)
 function checkVM(callback) {
   if (process.platform === 'win32') {
-    exec('wmic computersystem get model,manufacturer', (error, stdout, stderr) => {
+    const cmd = 'powershell -NoProfile -Command "Get-CimInstance -ClassName Win32_ComputerSystem | Select-Object -ExpandProperty Model"';
+    exec(cmd, (error, stdout, stderr) => {
       if (error) {
-        console.warn('WMIC command failed or unavailable. Proceeding in demo mode.', error);
-        return callback(false); // Can't detect, assume false
+        console.warn('CIM query command unavailable or failed. Proceeding with safety fallback.', error);
+        return callback(false);
       }
       const output = stdout.toLowerCase();
       const isVM = output.includes('vmware') || 
@@ -18,14 +19,15 @@ function checkVM(callback) {
                    output.includes('qemu') || 
                    output.includes('bochs') || 
                    output.includes('hyper-v') ||
-                   output.includes('innotek'); // VirtualBox manufacturer
+                   output.includes('innotek') ||
+                   output.includes('virtual');
       
       if (isVM && process.env.NIVASHA_STRICT_VM === '1') {
         console.error('Virtual Machine detected. Kiosk cannot run in a VM.');
         app.quit();
         return;
       } else if (isVM) {
-        console.warn('Virtual Machine detected, but strict mode disabled. Proceeding in demo mode.');
+        console.warn('Virtual Machine detected, but strict mode disabled. Proceeding in demo/dev mode.');
       }
       callback(isVM);
     });
@@ -83,6 +85,17 @@ function createWindow() {
   // Disable devTools in production, warn if open
   mainWindow.webContents.on('devtools-opened', () => {
     mainWindow.webContents.send('security-event', 'devtools_opened');
+  });
+
+  // Register IPC Handlers
+  ipcMain.on('kiosk-ready', () => {
+    console.log('Kiosk Terminal Renderer Ready');
+  });
+
+  ipcMain.on('kiosk-exit', () => {
+    console.log('Clean terminal exit requested by candidate submission');
+    if (mainWindow) mainWindow.close();
+    app.quit();
   });
 
   mainWindow.loadFile('index.html');
