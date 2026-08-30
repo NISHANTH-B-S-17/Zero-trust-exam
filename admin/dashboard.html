@@ -617,7 +617,7 @@
             <div class="table-card">
                 <div class="table-header-bar">
                     <span class="table-title">Student Roster</span>
-                    <button class="btn-primary">Register Student</button>
+                    <button class="btn-primary" onclick="openRegisterStudentModal()">Register Student</button>
                 </div>
                 <table>
                     <thead>
@@ -1153,6 +1153,41 @@
             } catch (err) {
                 console.error("Error in pollData:", err);
             }
+        }
+
+        // --- STUDENT REGISTRATION & INSPECTOR ACTIONS ---
+        async function openRegisterStudentModal() {
+            const name = prompt("Enter Student Full Name:");
+            if (!name) return;
+            const roll_no = prompt("Enter Roll Number (e.g., ROLL011):");
+            if (!roll_no) return;
+            const seat = prompt("Enter Seat Number (e.g., F-601):", "F-601");
+
+            const res = await fetchAPI('/api/v1/admin/register-student', {
+                method: 'POST',
+                body: JSON.stringify({ name, roll_no, seat })
+            });
+
+            if (res && res.ok) {
+                alert(`Student ${name} registered successfully!\nUUID: ${res.uuid}`);
+                pollData();
+            } else {
+                alert("Failed to register student. Please check permissions or input format.");
+            }
+        }
+
+        function openInspector(name, uuid) {
+            const drawer = document.getElementById('security-inspector-drawer');
+            if (drawer) {
+                document.getElementById('inspector-candidate-name').textContent = name;
+                document.getElementById('inspector-session-id').textContent = uuid;
+                drawer.classList.add('active');
+            }
+        }
+
+        function closeInspector(e) {
+            const drawer = document.getElementById('security-inspector-drawer');
+            if (drawer) drawer.classList.remove('active');
         }
 
         // --- STAFF MANAGEMENT MODALS & RBAC ACTIONS ---
