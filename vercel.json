@@ -1,5 +1,7 @@
 {
   "version": 2,
+  "cleanUrls": true,
+  "trailingSlash": false,
   "builds": [
     {
       "src": "api/index.py",
@@ -31,12 +33,14 @@
       "dest": "admin/dashboard.html"
     },
     {
+      "src": "/kiosk/?$",
+      "dest": "kiosk/index.html"
       "src": "/admin/(.*)",
       "dest": "admin/$1"
     },
     {
-      "src": "/kiosk",
-      "dest": "kiosk/index.html"
+      "src": "/kiosk/(.*)",
+      "dest": "kiosk/$1"
     },
     {
       "src": "/kiosk/(.*)",

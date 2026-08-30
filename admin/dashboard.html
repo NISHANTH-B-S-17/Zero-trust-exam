@@ -831,6 +831,10 @@
             ]
         };
 
+        // --- API Client Configuration ---
+        const isLocalHost = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost';
+        const API_BASE = isLocalHost ? 'http://127.0.0.1:8080/api/v1' : '/api/v1';
+        
         async function fetchAPI(path) {
             try {
                 const res = await fetch(API_BASE + path);
@@ -858,7 +862,12 @@
                         ...(options.headers || {})
                     }
                 });
-                if(!res.ok) throw new Error(`HTTP ${res.status}`);
+                if(!res.ok) {
+                    if (res.status === 403 || res.status === 401) {
+                        console.error(`Authentication error ${res.status} on ${path}. Verify ADMIN_TOKEN header.`);
+                    }
+                    throw new Error(`HTTP ${res.status}`);
+                }
                 return await res.json();
             } catch (e) {
                 return null;
