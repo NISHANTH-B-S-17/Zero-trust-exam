@@ -2,11 +2,6 @@
 const isLocalHost = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost';
 const KIOSK_ENV_API = (typeof process !== 'undefined' && process.env && process.env.KIOSK_API_BASE) ? process.env.KIOSK_API_BASE : null;
 const API_BASE = KIOSK_ENV_API || (isLocalHost ? 'http://127.0.0.1:8080/api/v1/student' : '/api/v1/student');
-const STORAGE_KEY = 'ZERO_TRUST_EXAM_SESSION_V6';
-
-// State Architecture
-// Constants
-const API_BASE = 'http://127.0.0.1:8080/api/v1/student';
 const STORAGE_KEY = 'ZERO_TRUST_EXAM_SESSION_V8';
 
 // Unified State Architecture

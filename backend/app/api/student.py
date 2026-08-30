@@ -198,34 +198,63 @@ async def submit_exam(request: SubmitRequest):
     answers = request.get_answers()
     async with aiosqlite.connect(settings.DB_PATH) as db:
         db.row_factory = aiosqlite.Row
+
+        # Prevent duplicate submissions
+        cursor = await db.execute('SELECT * FROM Submissions WHERE student_uuid = ?', (request.student_uuid,))
+        existing_sub = await cursor.fetchone()
+        if existing_sub:
+            sub_dict = dict(existing_sub)
+            receipt = json.loads(sub_dict.get('receipt_json') or '{}')
+            return {
+                "ok": True,
+                "status": "submitted",
+                "student_uuid": request.student_uuid,
+                "score": sub_dict['score'],
+                "correct": receipt.get('correct', 0),
+                "total": receipt.get('total', 0),
+                "receipt_hash": sub_dict['receipt_hash'],
+                "submitted_at": sub_dict['submitted_at'],
+                "message": "Exam already submitted"
+            }
+
         cursor = await db.execute('SELECT * FROM Generated_Papers WHERE student_uuid = ?', (request.student_uuid,))
         paper_record = await cursor.fetchone()
-        
+
     if not paper_record:
         raise HTTPException(status_code=400, detail="No paper found for student")
-        
+
     honeytoken_answers = json.loads(paper_record['honeytoken_answers_json'])
-    
+
     total = len(honeytoken_answers)
     correct = sum(1 for q_id, true_ans in honeytoken_answers.items() if answers.get(str(q_id)) == true_ans)
     score = (correct / total * 100) if total > 0 else 0
-    
+
     now = int(time.time())
-    receipt = {"student_uuid": request.student_uuid, "submitted_at": now, "total_answered": len(answers)}
+    receipt = {
+        "student_uuid": request.student_uuid,
+        "submitted_at": now,
+        "total_answered": len(answers),
+        "score": score,
+        "correct": correct,
+        "total": total
+    }
     receipt_hash = hashlib.sha256(json.dumps(receipt, sort_keys=True).encode()).hexdigest()
-    
+
     async with aiosqlite.connect(settings.DB_PATH) as db:
         await db.execute('''INSERT INTO Submissions (student_uuid, score, receipt_hash, receipt_json, submitted_at)
             VALUES (?, ?, ?, ?, ?)''', (request.student_uuid, score, receipt_hash, json.dumps(receipt), now))
-            
+
+        # Update Student session status to SUBMITTED
+        await db.execute('UPDATE Students SET status = ?, updated_at = ? WHERE uuid = ?', ("SUBMITTED", now, request.student_uuid))
+
         entry = f"{now}|{request.student_uuid}|EXAM_SUBMITTED|INFO|Hash: {receipt_hash}"
         sig = audit.sign_audit_entry(entry)
         await db.execute('''INSERT INTO Audit_Logs (timestamp, student_uuid, event_type, severity, detail, signature)
             VALUES (?, ?, ?, ?, ?, ?)''', (now, request.student_uuid, "EXAM_SUBMITTED", "INFO", f"Hash: {receipt_hash}", sig))
         await db.commit()
-        
+
     await manager.broadcast({"type": "exam_submit", "student_uuid": request.student_uuid, "timestamp": now})
-    
+
     return {
         "ok": True,
         "status": "submitted",
