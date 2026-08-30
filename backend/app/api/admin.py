@@ -272,6 +272,27 @@ async def register_student(payload: Dict[str, Any], staff: dict = Depends(requir
         "name": name
     }
 
+@router.delete("/students/{student_uuid}")
+async def delete_student(student_uuid: str, staff: dict = Depends(require_permission("view_students"))):
+    async with aiosqlite.connect(settings.DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        cursor = await db.execute('SELECT * FROM Students WHERE uuid = ?', (student_uuid,))
+        student = await cursor.fetchone()
+        if not student:
+            raise HTTPException(status_code=404, detail="Student record not found")
+        
+        # Remove student record
+        await db.execute('DELETE FROM Students WHERE uuid = ?', (student_uuid,))
+        
+        now = int(time.time())
+        entry = f"{now}|{student_uuid}|STUDENT_DELETED|INFO|Name: {student['name']}, Roll: {student['roll_no']}"
+        sig = audit.sign_audit_entry(entry)
+        await db.execute('''INSERT INTO Audit_Logs (timestamp, student_uuid, event_type, severity, detail, signature)
+            VALUES (?, ?, ?, ?, ?, ?)''', (now, student_uuid, "STUDENT_DELETED", "INFO", f"Name: {student['name']}, Roll: {student['roll_no']}", sig))
+        await db.commit()
+
+    return {"ok": True, "message": f"Student {student_uuid} removed successfully"}
+
 @router.get("/submissions")
 async def get_submissions(staff: dict = Depends(require_permission("view_submissions"))):
     async with aiosqlite.connect(settings.DB_PATH) as db:

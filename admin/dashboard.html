@@ -1055,7 +1055,10 @@
                             <td><span class="badge ${c.status === 'SUBMITTED' ? 'purple' : 'cyan'}">${c.status}</span></td>
                             <td>${c.answered || '0/10'}</td>
                             <td>60m</td>
-                            <td><button class="btn-icon" onclick="openInspector('${c.name}', '${c.uuid}')">View</button></td>
+                            <td>
+                                <button class="btn-icon" onclick="openInspector('${c.name}', '${c.uuid}')">View</button>
+                                <button class="btn-icon" style="color:var(--danger); border-color:var(--danger);" onclick="deleteStudent('${c.uuid}', '${c.name}')">Delete</button>
+                            </td>
                         </tr>
                     `).join('');
                 }
@@ -1188,6 +1191,21 @@
         function closeInspector(e) {
             const drawer = document.getElementById('security-inspector-drawer');
             if (drawer) drawer.classList.remove('active');
+        }
+
+        async function deleteStudent(uuid, name) {
+            if (!confirm(`Are you sure you want to remove student "${name}" (${uuid})?`)) return;
+
+            const res = await fetchAPI(`/api/v1/admin/students/${uuid}`, {
+                method: 'DELETE'
+            });
+
+            if (res && res.ok) {
+                alert(`Student "${name}" removed successfully.`);
+                pollData();
+            } else {
+                alert("Failed to delete student. Check permissions.");
+            }
         }
 
         // --- STAFF MANAGEMENT MODALS & RBAC ACTIONS ---
