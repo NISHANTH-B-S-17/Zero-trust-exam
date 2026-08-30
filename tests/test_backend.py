@@ -89,14 +89,15 @@ def test_database_creation():
 
 def test_vercel_config_exists():
     import os
-    admin_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../admin'))
+    root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+    admin_dir = os.path.join(root_dir, 'admin')
     index_path = os.path.join(admin_dir, 'index.html')
     dashboard_path = os.path.join(admin_dir, 'dashboard.html')
-    vercel_path = os.path.join(admin_dir, 'vercel.json')
+    vercel_path = os.path.join(root_dir, 'vercel.json')
     assert os.path.exists(index_path)
     assert os.path.exists(dashboard_path)
     assert os.path.exists(vercel_path)
-    
+
     with open(vercel_path, "r") as f:
         content = f.read()
-        assert "index.html" in content
+        assert "dashboard.html" in content

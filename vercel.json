@@ -1,31 +1,16 @@
 {
-  "version": 2,
-  "builds": [
+  "rewrites": [
     {
-      "src": "backend/app/main.py",
-      "use": "@vercel/python"
+      "source": "/api/(.*)",
+      "destination": "/api/index.py"
     },
     {
-      "src": "admin/**",
-      "use": "@vercel/static"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "backend/app/main.py"
+      "source": "/",
+      "destination": "/admin/dashboard.html"
     },
     {
-      "src": "/ws/(.*)",
-      "dest": "backend/app/main.py"
-    },
-    {
-      "src": "/admin/(.*)",
-      "dest": "admin/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "admin/dashboard.html"
+      "source": "/dashboard",
+      "destination": "/admin/dashboard.html"
     }
   ]
 }

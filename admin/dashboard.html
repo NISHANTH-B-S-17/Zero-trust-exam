@@ -757,7 +757,7 @@
         <div class="sys-item"><span>ENCRYPTION STATUS:</span><span class="val">🔒 AES-256 • RSA-4096</span></div>
         <div class="sys-item"><span>TELEMETRY STREAM:</span><span class="val">Auto-refresh in 15s ●</span></div>
         <div class="sys-item"><span>SYSTEM TIME:</span><span class="val" id="sys-clock">30/08/2026 02:48:55</span></div>
-        <div class="sys-item"><span>OPERATOR / HOST:</span><span class="val host" id="host-display">http://127.0.0.1:8080</span></div>
+        <div class="sys-item"><span>OPERATOR / HOST:</span><span class="val host" id="host-display">Vercel Node</span></div>
     </footer>
 
     <script>
@@ -765,7 +765,6 @@
         const currentOrigin = window.location.origin;
         const isFileProtocol = currentOrigin.startsWith('file:');
         const isLocal = currentOrigin.includes('127.0.0.1') || currentOrigin.includes('localhost');
-        const API_BASE = isLocal ? 'http://127.0.0.1:8080' : (isFileProtocol ? 'http://127.0.0.1:8080' : currentOrigin);
 
         const hostDisplayElem = document.getElementById('host-display');
         if (hostDisplayElem) {

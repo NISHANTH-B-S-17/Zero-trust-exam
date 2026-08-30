@@ -1,5 +1,5 @@
-from fastapi import APIRouter, HTTPException, Depends, Header
-from typing import List, Dict, Any
+from fastapi import APIRouter, HTTPException, Depends, Header, Query
+from typing import List, Dict, Any, Optional
 import aiosqlite
 import time
 import json
@@ -18,7 +18,7 @@ def verify_admin(x_admin_token: str = Header(...)):
     # Validate against configured ADMIN_TOKEN or fallback admin-demo-token
     valid_tokens = {settings.ADMIN_TOKEN, "admin-demo-token"}
     if x_admin_token not in valid_tokens:
-        raise HTTPException(status_code=403, detail="Invalid or missing admin authentication token")
+        raise HTTPException(status_code=403, detail="Invalid admin token")
     return True
 
 @router.get("/staff-security", response_model=StaffSecurityOverviewResponse)
