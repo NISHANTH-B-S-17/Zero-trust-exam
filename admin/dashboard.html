@@ -5,11 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ZERO TRUST EXAM ENGINE | ADMIN COMMAND CENTRE</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <style>
         :root {
-            /* Light Purple & Cyan Design Tokens from Screenshot */
+            /* Light Purple & Cyan Design Tokens from Reference Image 2 */
             --bg-page: #f6f7fb;
             --bg-card: #ffffff;
             --bg-subtle: #f1f5f9;
@@ -73,19 +71,8 @@
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
-        /* Background Shield Watermark */
-        .app-watermark-overlay {
-            position: fixed;
-            inset: 0;
-            background-image: url('assets/logo.jpeg');
-            background-repeat: no-repeat;
-            background-position: 80% 55%;
-            background-size: 460px;
-            opacity: 0.028;
-            pointer-events: none;
-            z-index: 0;
-            filter: grayscale(10%);
-        }
+        /* Background Watermark Removed */
+        .app-watermark-overlay { display: none !important; }
 
         /* 1. TOP HEADER & BRAND BAR */
         .top-brand-bar {
@@ -93,7 +80,6 @@
             background-color: var(--bg-card);
             border-bottom: 1px solid var(--border-color);
             display: flex;
-<<<<<<< Updated upstream
             align-items: center;
             justify-content: space-between;
             padding: 0 32px;
@@ -101,59 +87,11 @@
             flex-shrink: 0;
         }
 
-        .header-left {
-            display: flex;
-            align-items: baseline;
-            gap: 8px;
-=======
-            animation: cardSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        @keyframes cardSlideUp { 
-            from { opacity: 0; transform: translateY(12px); } 
-            to { opacity: 1; transform: translateY(0); } 
-        }
-
-        @keyframes floatSlow {
-            0% { transform: translateY(0px) rotate(0deg); }
-            50% { transform: translateY(-6px) rotate(1deg); }
-            100% { transform: translateY(0px) rotate(0deg); }
-        }
-
-        @keyframes pulseGlow {
-            0% { box-shadow: 0 0 10px rgba(124, 58, 237, 0.15); }
-            50% { box-shadow: 0 0 22px rgba(124, 58, 237, 0.35); }
-            100% { box-shadow: 0 0 10px rgba(124, 58, 237, 0.15); }
-        }
-
-        @keyframes scanBeam {
-            0% { top: 0%; opacity: 0.8; }
-            50% { opacity: 0.4; }
-            100% { top: 100%; opacity: 0.8; }
-        }
-
-        .scanning-radar {
-            position: relative;
-            overflow: hidden;
-        }
-
-        .scanning-radar::after {
-            content: '';
-            position: absolute;
-            left: 0; right: 0; height: 3px;
-            background: linear-gradient(90deg, transparent 0%, var(--purple-primary) 50%, transparent 100%);
-            animation: scanBeam 2.5s infinite ease-in-out;
-            pointer-events: none;
-        }
-
-        /* CARDS & SPACING */
-        .card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-card);
-            padding: 24px;
-            box-shadow: var(--shadow-card);
->>>>>>> Stashed changes
+        .brand-block { display: flex; align-items: center; gap: 14px; }
+        .brand-logo-frame {
+            width: 42px; height: 42px; border-radius: 12px; background: #ffffff;
+            border: 1px solid var(--purple-border); padding: 3px; box-shadow: 0 4px 12px rgba(124, 58, 237, 0.15);
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
         }
         .brand-logo-frame img { width: 100%; height: 100%; object-fit: contain; border-radius: 8px; }
         .brand-title-group h1 { font-size: 15px; font-weight: 800; color: var(--text-main); letter-spacing: -0.2px; line-height: 1.2; }
@@ -174,7 +112,7 @@
         }
         .btn-icon:hover { border-color: var(--purple-primary); color: var(--purple-primary); background: var(--purple-light); }
 
-        /* 2. TOP HORIZONTAL NAVIGATION BAR (NO LEFT SIDEBAR) */
+        /* 2. TOP HORIZONTAL NAVIGATION (NO LEFT SIDEBAR) */
         .top-horizontal-nav {
             background-color: var(--bg-card);
             border-bottom: 1px solid var(--border-color);
@@ -399,8 +337,6 @@
     </style>
 </head>
 <body>
-    <!-- Background Shield Watermark -->
-    <div class="app-watermark-overlay"></div>
 
     <!-- 1. TOP BRAND HEADER -->
     <header class="top-brand-bar">
@@ -566,14 +502,6 @@
                 </div>
             </div>
 
-<<<<<<< Updated upstream
-            <!-- 7. Question Vault -->
-            <div id="page-vault" class="page">
-                <div class="grid-cards" style="grid-template-columns: repeat(3, 1fr);">
-                    <div class="card">
-                        <div class="metric-title">Total Questions</div>
-                        <div class="metric-value">16</div>
-=======
             <div class="grid-3col">
                 <div class="card" style="text-align:center;">
                     <h4 style="font-size:13px; font-weight:800; margin-bottom:16px; align-self:flex-start;">Session Status Distribution</h4>
@@ -713,247 +641,10 @@
                                 <button class="btn-primary" onclick="runForensicTrace()">Run Trace 🔍</button>
                             </div>
                         </div>
->>>>>>> Stashed changes
                     </div>
 
                     <!-- Zero-Width Space Inspector Mode -->
                     <div class="card">
-<<<<<<< Updated upstream
-                        <div class="metric-title">Vault Status</div>
-                        <div class="metric-value success" style="font-size: 20px; margin-top: 8px;">DECRYPTED</div>
-                    </div>
-                    <div class="card">
-                        <div class="metric-title">Unique Subjects</div>
-                        <div class="metric-value">4</div>
-                    </div>
-                </div>
-                
-                <div class="panel">
-                    <div class="panel-header">Question Bank</div>
-                    <div class="table-wrap">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>Subject</th>
-                                    <th>Topic</th>
-                                    <th>Type</th>
-                                    <th>Difficulty</th>
-                                    <th>Question Preview</th>
-                                </tr>
-                            </thead>
-                            <tbody id="table-vault">
-                                <tr><td colspan="6" style="text-align:center;color:var(--text-muted);">Loading vault...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 7b. Staff Security -->
-            <div id="page-staff-security" class="page">
-                <div class="demo-banner active" style="margin-bottom: 24px;">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-                    <div><strong>Demo policy preview - backend endpoint pending</strong></div>
-                </div>
-
-                <div class="grid-cards" style="grid-template-columns: repeat(3, 1fr);">
-                    <div class="card" style="border-left: 4px solid var(--primary);">
-                        <div class="metric-title">Role-Based Access</div>
-                        <div class="metric-value success" style="font-size:16px; margin-top:8px;">ACTIVE</div>
-                        <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">Minimizes raw paper exposure</div>
-                    </div>
-                    <div class="card" style="border-left: 4px solid var(--primary);">
-                        <div class="metric-title">Risk Scoring</div>
-                        <div class="metric-value success" style="font-size:16px; margin-top:8px;">ENFORCED</div>
-                        <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">Detects suspicious behavior</div>
-                    </div>
-                    <div class="card" style="border-left: 4px solid var(--primary);">
-                        <div class="metric-title">Staff Audit Trail</div>
-                        <div class="metric-value success" style="font-size:16px; margin-top:8px;">LOGGING</div>
-                        <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">Creates accountability</div>
-                    </div>
-                </div>
-
-                <div class="grid-split" style="grid-template-columns: 2fr 1fr;">
-                    <!-- Roles & Assignments -->
-                    <div style="display: flex; flex-direction: column; gap: 24px;">
-                        <div class="panel" style="margin-bottom: 0;">
-                            <div class="panel-header">Staff Roles Overview</div>
-                            <div class="table-wrap">
-                                <table>
-                                    <thead>
-                                        <tr>
-                                            <th>Role</th>
-                                            <th>Allowed Actions</th>
-                                            <th>Blocked Actions</th>
-                                            <th>Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td><span class="status-badge blue">QUESTION_CREATOR</span></td>
-                                            <td>Create Qs, View Own Qs</td>
-                                            <td>View Final Paper, Export Vault</td>
-                                            <td><span class="status-badge green">Enforced</span></td>
-                                        </tr>
-                                        <tr>
-                                            <td><span class="status-badge purple">REVIEWER</span></td>
-                                            <td>View Assigned Qs</td>
-                                            <td>View Unassigned Qs, Export</td>
-                                            <td><span class="status-badge green">Enforced</span></td>
-                                        </tr>
-                                        <tr>
-                                            <td><span class="status-badge orange">EXAM_CONTROLLER</span></td>
-                                            <td>Manage Roster, Start Exam</td>
-                                            <td>View Raw Qs, Export Vault</td>
-                                            <td><span class="status-badge green">Enforced</span></td>
-                                        </tr>
-                                        <tr>
-                                            <td><span class="status-badge red">SECURITY_ADMIN</span></td>
-                                            <td>Trace Leaks, Manage Roles</td>
-                                            <td>View Raw Qs</td>
-                                            <td><span class="status-badge green">Enforced</span></td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-
-                        <div class="panel" style="margin-bottom: 0;">
-                            <div class="panel-header">Reviewer Assignments</div>
-                            <div class="table-wrap">
-                                <table>
-                                    <thead>
-                                        <tr>
-                                            <th>Name</th>
-                                            <th>Role</th>
-                                            <th>Assigned Qs</th>
-                                            <th>Last Viewed</th>
-                                            <th>Risk Score</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="table-reviewer-assignments">
-                                        <tr>
-                                            <td>Dr. A. Sharma</td>
-                                            <td><span class="status-badge purple">REVIEWER</span></td>
-                                            <td class="mono">Q-1049, Q-1050</td>
-                                            <td>10 mins ago</td>
-                                            <td><span style="color: var(--success); font-weight: 600;">12</span> (LOW)</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Prof. K. Iyer</td>
-                                            <td><span class="status-badge purple">REVIEWER</span></td>
-                                            <td class="mono">Q-1051</td>
-                                            <td>2 hours ago</td>
-                                            <td><span style="color: var(--warning); font-weight: 600;">45</span> (MEDIUM)</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-
-                        <div class="panel" style="margin-bottom: 0;">
-                            <div class="panel-header">Insider Risk Alerts</div>
-                            <div class="table-wrap">
-                                <table>
-                                    <thead>
-                                        <tr>
-                                            <th>Staff User</th>
-                                            <th>Risk Level</th>
-                                            <th>Trigger Reason</th>
-                                            <th>Action Taken</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="table-risk-alerts">
-                                        <tr>
-                                            <td>S. Gupta (Creator)</td>
-                                            <td><span class="status-badge red">CRITICAL</span></td>
-                                            <td>Attempted final paper view</td>
-                                            <td><span style="color: var(--danger); font-weight: 600;">BLOCKED</span></td>
-                                        </tr>
-                                        <tr>
-                                            <td>Prof. K. Iyer (Reviewer)</td>
-                                            <td><span class="status-badge orange">HIGH</span></td>
-                                            <td>Repeated access close to exam</td>
-                                            <td><span style="color: var(--warning); font-weight: 600;">FLAGGED</span></td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Side Panels -->
-                    <div style="display: flex; flex-direction: column; gap: 24px;">
-                        <div class="panel" style="margin-bottom: 0;">
-                            <div class="panel-header">Blocked Actions</div>
-                            <div class="table-wrap">
-                                <table style="font-size: 12px;">
-                                    <thead>
-                                        <tr>
-                                            <th>Time</th>
-                                            <th>Action & Reason</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="table-blocked-actions">
-                                        <tr>
-                                            <td class="mono">10:42</td>
-                                            <td>
-                                                <div style="font-weight: 600;">S. Gupta (Creator)</div>
-                                                <div style="color: var(--danger);">View Final Paper -> Blocked</div>
-                                                <div style="color: var(--text-muted); font-size: 11px;">Policy: Creator cannot view final assembly.</div>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td class="mono">09:15</td>
-                                            <td>
-                                                <div style="font-weight: 600;">Admin_01</div>
-                                                <div style="color: var(--danger);">Export Vault -> Blocked</div>
-                                                <div style="color: var(--text-muted); font-size: 11px;">Policy: Admins have no raw access.</div>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-
-                        <div class="panel" style="margin-bottom: 0;">
-                            <div class="panel-header">Staff Audit Trail</div>
-                            <div class="table-wrap" style="max-height: 400px; overflow-y: auto;">
-                                <table style="font-size: 12px;">
-                                    <tbody id="table-staff-audit">
-                                        <tr>
-                                            <td style="padding: 8px;">
-                                                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                                                    <span class="mono" style="color: var(--text-muted);">10:45:12</span>
-                                                    <span class="mono" style="color: var(--primary);">session_99x</span>
-                                                </div>
-                                                <div><strong>Dr. A. Sharma</strong> viewed <span class="mono">Q-1049</span></div>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td style="padding: 8px;">
-                                                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                                                    <span class="mono" style="color: var(--text-muted);">10:42:01</span>
-                                                    <span class="mono" style="color: var(--primary);">session_82b</span>
-                                                </div>
-                                                <div><strong>S. Gupta</strong> attempted to view FINAL_PAPER</div>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td style="padding: 8px;">
-                                                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                                                    <span class="mono" style="color: var(--text-muted);">09:15:22</span>
-                                                    <span class="mono" style="color: var(--primary);">session_11a</span>
-                                                </div>
-                                                <div><strong>Admin_01</strong> attempted vault export</div>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-=======
                         <div style="margin-bottom:16px; border-bottom:1px solid var(--border-color); padding-bottom:12px;">
                             <h3 style="font-size:15px; font-weight:800; color:var(--text-main); display:flex; align-items:center; gap:8px;">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -982,7 +673,6 @@
                             </div>
                             <h4 style="font-size:17px; font-weight:800; color:var(--text-main);">Ready for Attribution Analysis</h4>
                             <p style="font-size:13px; margin-top:8px; line-height:1.5; max-width:360px; margin-left:auto; margin-right:auto;">Paste leaked text or upload a screen photo on the left to execute the tri-layer forensic pipeline.</p>
->>>>>>> Stashed changes
                         </div>
                     </div>
                 </div>
@@ -1076,102 +766,11 @@
         const isFileProtocol = currentOrigin.startsWith('file:');
         const isLocal = currentOrigin.includes('127.0.0.1') || currentOrigin.includes('localhost');
 
-<<<<<<< Updated upstream
-        navItems.forEach(item => {
-            item.addEventListener('click', (e) => {
-                e.preventDefault();
-                navItems.forEach(nav => nav.classList.remove('active'));
-                pages.forEach(page => page.classList.remove('active'));
-                
-                item.classList.add('active');
-                
-                const targetId = item.getAttribute('data-target');
-                document.getElementById(targetId).classList.add('active');
-                
-                headerTitle.textContent = item.getAttribute('data-title');
-                headerCategory.textContent = '/ ' + item.getAttribute('data-category');
-=======
         const hostDisplayElem = document.getElementById('host-display');
         if (hostDisplayElem) {
             if (isFileProtocol) hostDisplayElem.textContent = 'Local File (Offline Mode)';
             else if (isLocal) hostDisplayElem.textContent = '127.0.0.1:8080';
             else hostDisplayElem.textContent = `${window.location.hostname} (Vercel Node)`;
-        }
-
-        // SPA HASH ROUTER FOR ALL MODULES
-        const routes = [
-            '#/dashboard', '#/live-sessions', '#/student-roster', '#/submissions',
-            '#/audit-logs', '#/forensic-tracer', '#/question-vault',
-            '#/payload-manager', '#/ai-air-gap', '#/node-health'
-        ];
-
-        function handleHashRoute() {
-            let hash = window.location.hash || '#/dashboard';
-            if (!routes.includes(hash)) hash = '#/dashboard';
-
-            // Active Tab Styling
-            document.querySelectorAll('.nav-tab-item, .dropdown-link, [data-target]').forEach(el => {
-                const targetHash = el.getAttribute('href') || el.getAttribute('data-target');
-                if (targetHash === hash) {
-                    el.classList.add('active');
-                } else {
-                    el.classList.remove('active');
-                }
->>>>>>> Stashed changes
-            });
-        });
-
-<<<<<<< Updated upstream
-        // --- Clock ---
-        function updateTime() {
-=======
-            // Activate Target View Pane
-            const targetPaneId = 'pane-' + hash.replace('#/', '');
-            document.querySelectorAll('.view-pane').forEach(pane => pane.classList.remove('active'));
-            const activePane = document.getElementById(targetPaneId);
-            if (activePane) {
-                activePane.classList.add('active');
-            }
-
-            // Update Breadcrumb Titles
-            const titleElem = document.getElementById('header-title');
-            if (titleElem) {
-                const titleMap = {
-                    '#/dashboard': 'Dashboard',
-                    '#/live-sessions': 'Live Sessions',
-                    '#/student-roster': 'Student Roster',
-                    '#/submissions': 'Submissions',
-                    '#/audit-logs': 'Audit Logs',
-                    '#/forensic-tracer': 'Forensic Tracer',
-                    '#/question-vault': 'Question Vault',
-                    '#/payload-manager': 'Payload Manager',
-                    '#/ai-air-gap': 'AI Air Gap',
-                    '#/node-health': 'Node Health'
-                };
-                titleElem.textContent = titleMap[hash] || 'Dashboard';
-            }
-        }
-
-        window.addEventListener('hashchange', handleHashRoute);
-        window.addEventListener('DOMContentLoaded', () => {
-            handleHashRoute();
-            // Bind click listeners for instant navigation
-            document.querySelectorAll('a[href^="#/"]').forEach(link => {
-                link.addEventListener('click', (e) => {
-                    const hash = link.getAttribute('href');
-                    if (hash) {
-                        window.location.hash = hash;
-                        handleHashRoute();
-                    }
-                });
-            });
-        });
-
-        // Clock
-        function updateClock() {
->>>>>>> Stashed changes
-            const now = new Date();
-            document.getElementById('datetime').textContent = now.toLocaleDateString() + ' ' + now.toLocaleTimeString();
         }
 
         // SPA HASH ROUTER FOR 10 MODULES
@@ -1185,20 +784,38 @@
             let hash = window.location.hash || '#/dashboard';
             if (!routes.includes(hash)) hash = '#/dashboard';
 
-            document.querySelectorAll('.nav-tab-item').forEach(el => {
+            // Active Tab Styling
+            document.querySelectorAll('.nav-tab-item, [href^="#/"]').forEach(el => {
                 const targetHash = el.getAttribute('href');
-                if (targetHash === hash) el.classList.add('active');
-                else el.classList.remove('active');
+                if (targetHash === hash) {
+                    el.classList.add('active');
+                } else {
+                    el.classList.remove('active');
+                }
             });
 
+            // Activate Target View Pane
             const targetPaneId = 'pane-' + hash.replace('#/', '');
             document.querySelectorAll('.view-pane').forEach(pane => pane.classList.remove('active'));
             const activePane = document.getElementById(targetPaneId);
-            if (activePane) activePane.classList.add('active');
+            if (activePane) {
+                activePane.classList.add('active');
+            }
         }
 
         window.addEventListener('hashchange', handleHashRoute);
-        window.addEventListener('load', handleHashRoute);
+        window.addEventListener('DOMContentLoaded', () => {
+            handleHashRoute();
+            document.querySelectorAll('a[href^="#/"]').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    const hash = link.getAttribute('href');
+                    if (hash) {
+                        window.location.hash = hash;
+                        handleHashRoute();
+                    }
+                });
+            });
+        });
 
         // Clock
         function updateClock() {
@@ -1229,39 +846,10 @@
             ]
         };
 
-        // --- API Client Configuration ---
-        const isLocalHost = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost';
-        const API_BASE = isLocalHost ? 'http://127.0.0.1:8080/api/v1' : '/api/v1';
-        
-        // --- API Client Configuration ---
-        const isLocalHost = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost';
-        const API_BASE = isLocalHost ? 'http://127.0.0.1:8080/api/v1' : '/api/v1';
-        
-        const urlParams = new URLSearchParams(window.location.search);
-        const adminToken = urlParams.get('token') || localStorage.getItem('admin_token') || 'admin-demo-token';
-        localStorage.setItem('admin_token', adminToken);
-        
-        let demoModeActive = false;
-
-        async function fetchAPI(path, options = {}) {
+        async function fetchAPI(path) {
             try {
-                // Support both full path starting with /api/v1 or endpoint relative path
-                const endpoint = path.startsWith('/api/v1') ? path.substring(7) : path;
-                const url = API_BASE + (endpoint.startsWith('/') ? endpoint : '/' + endpoint);
-                const res = await fetch(url, {
-                    ...options,
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'x-admin-token': adminToken,
-                        ...(options.headers || {})
-                    }
-                });
-                if(!res.ok) {
-                    if (res.status === 403 || res.status === 401) {
-                        console.error(`Authentication error ${res.status} on ${path}. Verify ADMIN_TOKEN header.`);
-                    }
-                    throw new Error(`HTTP ${res.status}`);
-                }
+                const res = await fetch(API_BASE + path);
+                if (!res.ok) throw new Error('HTTP Error');
                 return await res.json();
             } catch (e) {
                 return null;
@@ -1269,21 +857,6 @@
         }
 
         async function pollData() {
-<<<<<<< Updated upstream
-            const data = await fetchAPI('/api/v1/admin/dashboard');
-            
-            const errBanner = document.getElementById('error-banner');
-            const dot = document.getElementById('conn-dot');
-            const text = document.getElementById('conn-text');
-            const demoBanner = document.getElementById('demo-banner');
-
-            if (!data) {
-                // Completely Offline
-                errBanner.classList.add('active');
-                demoBanner.classList.remove('active');
-                dot.classList.add('offline');
-                text.textContent = 'Offline';
-=======
             try {
                 const roster = await fetchAPI('/api/v1/admin/students') || DEMO_DATA.roster;
                 const submissions = await fetchAPI('/api/v1/admin/submissions') || DEMO_DATA.submissions;
@@ -1396,127 +969,15 @@
             }
         }
 
-        // --- FORENSIC LEAK TRACER FUNCTIONS ---
-        let lastTraceResult = null;
-
-        function updateCharCount() {
-            const val = document.getElementById('forensic-input').value;
-            const counter = document.getElementById('char-counter');
-            if (counter) counter.textContent = `${val.length} chars`;
-
-            // Live ZWSP Inspection
-            inspectUnicode(val);
+        // Inspector Drawer Actions
+        function openInspector(name, uuid) {
+            document.getElementById('inspector-candidate-name').textContent = name || 'Aarav Sharma';
+            document.getElementById('inspector-session-id').textContent = uuid || 'S-8217';
+            document.getElementById('security-inspector-drawer').classList.add('active');
         }
 
-        function sanitizeInput(mode) {
-            const input = document.getElementById('forensic-input');
-            if (!input) return;
-            if (mode === 'strip') {
-                input.value = input.value.replace(/[\u200B-\u200D\uFEFF]/g, '');
-            } else if (mode === 'normalize') {
-                input.value = input.value.replace(/\s+/g, ' ').trim();
-            }
-            updateCharCount();
-        }
-
-        function inspectUnicode(text) {
-            const highlightBox = document.getElementById('zwsp-highlight-box');
-            const binaryBox = document.getElementById('binary-stream-box');
-            if (!highlightBox || !binaryBox) return;
-
-            if (!text) {
-                highlightBox.innerHTML = `<span style="color:var(--text-muted);">Interactive Unicode inspector will highlight invisible steganographic watermark chips in bright pink/violet chips here...</span>`;
-                binaryBox.textContent = '0000000000000000000000000000000000000000000000000000000000000000';
->>>>>>> Stashed changes
-                return;
-            }
-
-            // Online!
-            errBanner.classList.remove('active');
-            dot.classList.remove('offline');
-            text.textContent = isLocalHost ? '127.0.0.1:8080' : 'Vercel API Connected';
-            
-            // Dashboard Telemetry Table
-            document.getElementById('dash-telemetry').innerHTML = rList.map(c => `
-                <tr>
-                    <td><strong>${c.name}</strong></td>
-                    <td class="mono">${c.roll}</td>
-                    <td><span class="badge ${c.status === 'SUBMITTED' ? 'purple' : (c.status === 'REGISTERED' ? 'cyan' : 'orange')}">${c.status}</span></td>
-                    <td><div style="width:60px; height:6px; background:#e2e8f0; border-radius:3px; overflow:hidden;"><div style="width:${c.status === 'SUBMITTED' ? '100%' : '0%'}; height:100%; background:var(--purple-primary);"></div></div></td>
-                    <td class="mono" style="font-size:11px; color:var(--danger);">529026s</td>
-                </tr>
-            `).join('');
-
-            // Roster Table
-            document.getElementById('table-roster').innerHTML = rList.map((c, i) => `
-                <tr>
-                    <td>${i+1}</td>
-                    <td><strong>${c.name}</strong></td>
-                    <td class="mono">${c.roll}</td>
-                    <td class="mono" style="font-size:11px;">${c.uuid}</td>
-                    <td class="mono">${c.seat}</td>
-                    <td><span class="badge ${c.status === 'SUBMITTED' ? 'purple' : 'cyan'}">${c.status}</span></td>
-                    <td>${c.answered || '0/10'}</td>
-                    <td>60m</td>
-                    <td><button class="btn-icon" onclick="openInspector('${c.name}', '${c.uuid}')">View</button></td>
-                </tr>
-            `).join('');
-
-            // Live Table
-            document.getElementById('table-live').innerHTML = rList.map((c, i) => `
-                <tr>
-                    <td>${i+1}</td>
-                    <td class="mono" style="font-size:11px;">${c.uuid}</td>
-                    <td><strong>${c.name}</strong></td>
-                    <td class="mono">${c.roll}</td>
-                    <td class="mono">${c.seat}</td>
-                    <td><span class="badge green">${c.status}</span></td>
-                    <td>Q1</td>
-                    <td>${c.answered || '0/10'}</td>
-                    <td>60m 00s</td>
-                    <td>529041s ago</td>
-                </tr>
-            `).join('');
-
-            // Submissions Table
-            const sList = Array.isArray(submissions) ? submissions : (submissions.data || DEMO_DATA.submissions);
-            document.getElementById('table-submissions').innerHTML = sList.map((s, i) => `
-                <tr>
-                    <td>${i+1}</td>
-                    <td><strong>${s.name}</strong></td>
-                    <td class="mono">${s.roll}</td>
-                    <td class="fw-bold" style="color:var(--danger);">${s.score}</td>
-                    <td>${s.correct}</td>
-                    <td><span class="badge red">${s.result}</span></td>
-                    <td class="mono" style="font-size:11px;">${s.hash}</td>
-                    <td><button class="btn-icon">Receipt</button></td>
-                </tr>
-            `).join('');
-
-            // Vault Table
-            const vList = Array.isArray(vault) ? vault : (vault.questions || vault.data || DEMO_DATA.vault);
-            document.getElementById('table-vault').innerHTML = vList.map(q => `
-                <tr>
-                    <td class="mono">${q.id}</td>
-                    <td>${q.subject}</td>
-                    <td>${q.topic}</td>
-                    <td><span class="badge purple">${q.type}</span></td>
-                    <td>${q.diff}</td>
-                    <td style="max-width:240px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${q.preview}</td>
-                </tr>
-            `).join('');
-
-            // Audit Table
-            const aList = Array.isArray(audit) ? audit : (audit.logs || audit.data || DEMO_DATA.audit);
-            document.getElementById('table-audit').innerHTML = aList.map(a => `
-                <tr>
-                    <td class="mono" style="font-size:11px;">${a.timestamp}</td>
-                    <td><strong>${a.event_type}</strong></td>
-                    <td><span class="badge ${a.severity === 'CRITICAL' ? 'red' : 'cyan'}">${a.severity}</span></td>
-                    <td class="mono" style="font-size:11px;">${a.uuid}</td>
-                    <td>${a.detail}</td>
-                </tr>
-            `).join('');
+        function closeInspector(e) {
+            document.getElementById('security-inspector-drawer').classList.remove('active');
         }
 
         // --- FORENSIC LEAK TRACER FUNCTIONS ---
@@ -1526,8 +987,6 @@
             const val = document.getElementById('forensic-input').value;
             const counter = document.getElementById('char-counter');
             if (counter) counter.textContent = `${val.length} chars`;
-
-            // Live ZWSP Inspection
             inspectUnicode(val);
         }
 
@@ -1560,16 +1019,16 @@
                 const char = text[i];
                 const code = char.charCodeAt(0);
 
-                if (code === 0x200B) { // ZWSP
-                    html += `<span style="background:var(--pink-primary); color:white; padding:1px 6px; border-radius:4px; font-size:10px; font-weight:bold; margin:0 2px;">[ZWSP]</span>`;
+                if (code === 0x200B) {
+                    html += `<span style="background:var(--purple-primary); color:white; padding:1px 6px; border-radius:4px; font-size:10px; font-weight:bold; margin:0 2px;">[ZWSP]</span>`;
                     binaryStream += '0';
-                } else if (code === 0x200C) { // ZWNJ
-                    html += `<span style="background:var(--purple-primary); color:white; padding:1px 6px; border-radius:4px; font-size:10px; font-weight:bold; margin:0 2px;">[ZWNJ]</span>`;
+                } else if (code === 0x200C) {
+                    html += `<span style="background:var(--purple-hover); color:white; padding:1px 6px; border-radius:4px; font-size:10px; font-weight:bold; margin:0 2px;">[ZWNJ]</span>`;
                     binaryStream += '1';
-                } else if (code === 0x200D) { // ZWJ
+                } else if (code === 0x200D) {
                     html += `<span style="background:var(--cyan-primary); color:white; padding:1px 6px; border-radius:4px; font-size:10px; font-weight:bold; margin:0 2px;">[ZWJ]</span>`;
                     binaryStream += '11';
-                } else if (code === 0xFEFF) { // ZWNBSP / BOM
+                } else if (code === 0xFEFF) {
                     html += `<span style="background:var(--warning); color:white; padding:1px 6px; border-radius:4px; font-size:10px; font-weight:bold; margin:0 2px;">[BOM]</span>`;
                 } else {
                     html += char === '\n' ? '<br>' : char;
@@ -1612,25 +1071,19 @@
                 return;
             }
 
-            // Skeleton Placeholder
             resultCard.innerHTML = `
-                <div style="padding:24px;">
+                <div style="padding:24px;" class="scanning-radar">
                     <div style="height:24px; background:#e2e8f0; border-radius:6px; margin-bottom:16px; width:40%;"></div>
                     <div style="height:120px; background:#f1f5f9; border-radius:12px; margin-bottom:16px;"></div>
                     <div style="height:80px; background:#f1f5f9; border-radius:12px;"></div>
                 </div>
             `;
 
-            // Call Backend API or fall back to high-fidelity mock
-            const backendRes = await fetchAPI('/api/v1/admin/trace-leak', {
-                method: 'POST',
-                body: JSON.stringify({ leak_text: inputVal })
-            });
+            const backendRes = await fetchAPI('/api/v1/admin/trace-leak');
 
             const data = backendRes || {
                 verdict: 'LEAK ATTRIBUTED',
                 confidence: '98.4%',
-                method: 'Layer 1: ZWSP Unicode + Layer 2: Lexical Synonym Overlap',
                 candidate: {
                     name: 'Aarav Sharma',
                     uuid: '550e8400-e29b-41d4-a716-446655440001',
@@ -1638,18 +1091,12 @@
                     desk_ip: '10.0.1.14 (LAB-1 / SEAT-01)',
                     session_time: '29 Aug 2026 03:01:22 AM'
                 },
-                differential: {
-                    base: 'Explain the principles of kinetic friction and calculate amplitude.',
-                    candidate_variant: 'Clarify the principles of kinetic friction and determine amplitude.',
-                    pasted_snippet: inputVal
-                },
                 margin_victory: 'Runner-up Priya Patel (12.1% match). Margin of victory: +86.3%'
             };
 
             lastTraceResult = data;
 
             resultCard.innerHTML = `
-                <!-- Verdict Banner -->
                 <div style="padding:16px 20px; background:var(--danger-bg); border:1px solid #fecaca; border-radius:16px; display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
                     <div style="display:flex; align-items:center; gap:10px;">
                         <span class="badge red">LEAK ATTRIBUTED</span>
@@ -1658,7 +1105,6 @@
                     <span class="mono" style="font-size:12px; font-weight:800; color:#dc2626;">98.4% Confidence</span>
                 </div>
 
-                <!-- Suspect Identity Card -->
                 <div style="background:#ffffff; border:1px solid var(--border-color); border-radius:16px; padding:20px; margin-bottom:16px; box-shadow:var(--shadow-card);">
                     <div style="font-size:11px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;">SUSPECTED CANDIDATE IDENTITY</div>
                     <h3 style="font-size:18px; font-weight:800; color:var(--text-main); margin-bottom:4px;">${data.candidate.name}</h3>
@@ -1671,9 +1117,8 @@
                     </div>
                 </div>
 
-                <!-- Forensic Detection Layer Badge -->
                 <div style="padding:14px; background:#f8fafc; border:1px solid var(--border-color); border-radius:12px; font-size:12px; margin-bottom:16px;">
-                    <span style="font-weight:800; color:var(--text-muted); display:block; margin-bottom:4px; text-transform:uppercase; font-size:10px;">DETECTION METHOD BADGES</span>
+                    <span style="font-weight:800; color:var(--text-muted); display:block; margin-bottom:6px; text-transform:uppercase; font-size:10px;">DETECTION METHOD BADGES</span>
                     <div style="display:flex; gap:6px; flex-wrap:wrap;">
                         <span class="badge purple">Layer 1: ZWSP Unicode</span>
                         <span class="badge cyan">Layer 2: Lexical Synonym</span>
@@ -1681,30 +1126,11 @@
                     </div>
                 </div>
 
-                <!-- Evidence Differential Breakdown Matrix -->
-                <div style="padding:16px; background:#ffffff; border:1px solid var(--border-color); border-radius:14px; margin-bottom:16px; font-size:12px;">
-                    <div style="font-weight:800; color:var(--text-main); margin-bottom:8px;">Evidence Differential Matrix</div>
-                    <div style="display:flex; flex-direction:column; gap:8px;">
-                        <div style="padding:8px; background:#f1f5f9; border-radius:8px;"><strong>Base Item:</strong> Explain principles...</div>
-                        <div style="padding:8px; background:#f3e8ff; border-radius:8px; color:var(--purple-primary);"><strong>Candidate Variant:</strong> <mark style="background:#ddd6fe;">Clarify</mark> principles... <mark style="background:#ddd6fe;">determine</mark> amplitude.</div>
-                    </div>
-                    <div style="font-size:11px; color:var(--text-muted); margin-top:8px;" class="mono">${data.margin_victory}</div>
-                </div>
-
-                <!-- Action Buttons -->
                 <div style="display:flex; gap:10px;">
-                    <button class="btn-primary" style="background:var(--danger); flex:1;" onclick="flagSuspectCandidate('${data.candidate.uuid}')">Flag Candidate 🚩</button>
-                    <button class="btn-primary" style="background:var(--warning); flex:1;" onclick="invalidateActiveSession('${data.candidate.uuid}')">Invalidate Session 🔒</button>
+                    <button class="btn-primary" style="background:var(--danger); flex:1;" onclick="alert('Candidate Flagged')">Flag Candidate 🚩</button>
+                    <button class="btn-primary" style="background:var(--warning); flex:1;" onclick="alert('Session Invalidated')">Invalidate Session 🔒</button>
                 </div>
             `;
-        }
-
-        function flagSuspectCandidate(uuid) {
-            alert(`Candidate ${uuid} flagged for security review.`);
-        }
-
-        function invalidateActiveSession(uuid) {
-            alert(`Active session for candidate ${uuid} invalidated.`);
         }
 
         function exportForensicReport(format) {
