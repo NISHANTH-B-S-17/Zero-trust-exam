@@ -67,7 +67,7 @@ async def _get_or_generate_paper(student_uuid: str):
         return paper_data
         
     all_q = await database.fetch_all_questions()
-    selected_qs = FairExamFormGenerator.generate_deterministic_paper(all_q, student_uuid, target_count=2)
+    selected_qs = FairExamFormGenerator.generate_deterministic_paper(all_q, student_uuid, target_count=len(all_q))
     
     watermarked_paper = []
     honeytoken_answers = {}
