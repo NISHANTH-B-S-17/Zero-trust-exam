@@ -5,6 +5,11 @@ const API_BASE = KIOSK_ENV_API || (isLocalHost ? 'http://127.0.0.1:8080/api/v1/s
 const STORAGE_KEY = 'ZERO_TRUST_EXAM_SESSION_V6';
 
 // State Architecture
+// Constants
+const API_BASE = 'http://127.0.0.1:8080/api/v1/student';
+const STORAGE_KEY = 'ZERO_TRUST_EXAM_SESSION_V8';
+
+// Unified State Architecture
 let state = {
     uuid: null,
     token: null,
@@ -20,8 +25,9 @@ let state = {
 let heartbeatInterval = null;
 let timerInterval = null;
 let securityEventsQueue = [];
+let isSubmitting = false;
 
-// DOM Elements
+// DOM View References
 const views = {
     login: document.getElementById('login-view'),
     exam: document.getElementById('exam-view')
@@ -38,11 +44,11 @@ function initApp() {
         window.electronAPI.onSecurityEvent(handleSecurityEvent);
     }
 
-    // Auto-focus Student UUID field on Screen 1
+    // Auto-focus Student UUID field
     const uuidInput = document.getElementById('uuid');
     if (uuidInput) setTimeout(() => uuidInput.focus(), 200);
 
-    // Try to restore existing session
+    // Restore existing session if present
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
         try {
@@ -57,33 +63,65 @@ function initApp() {
         }
     }
 
-    // Setup Login Form Listener
-    document.getElementById('login-form').addEventListener('submit', handleLogin);
+    // Login Form Listener
+    const loginForm = document.getElementById('login-form');
+    if (loginForm) loginForm.addEventListener('submit', handleLogin);
     
-    // Setup Exam Navigation Controls
-    document.getElementById('btn-next').addEventListener('click', () => {
-        saveState();
-        navigate(1);
-    });
-    document.getElementById('btn-prev').addEventListener('click', () => {
-        saveState();
-        navigate(-1);
-    });
-    document.getElementById('btn-flag').addEventListener('click', toggleFlag);
-    document.getElementById('btn-clear').addEventListener('click', clearAnswer);
-    document.getElementById('header-submit-btn').addEventListener('click', confirmSubmit);
+    // Exam Controls Initialization
+    const btnNext = document.getElementById('btn-next');
+    if (btnNext) {
+        btnNext.addEventListener('click', () => {
+            saveState();
+            if (state.currentIndex === state.paper.questions.length - 1) {
+                showToast('Final Answer Saved. Opening Submission Confirmation...', 'success');
+                confirmSubmit();
+            } else {
+                navigate(1);
+            }
+        });
+    }
+
+    const btnPrev = document.getElementById('btn-prev');
+    if (btnPrev) {
+        btnPrev.addEventListener('click', () => {
+            saveState();
+            navigate(-1);
+        });
+    }
+
+    const btnFlag = document.getElementById('btn-flag');
+    if (btnFlag) btnFlag.addEventListener('click', toggleFlag);
+
+    const btnClear = document.getElementById('btn-clear');
+    if (btnClear) btnClear.addEventListener('click', clearAnswer);
+
+    const btnHeaderSubmit = document.getElementById('header-submit-btn');
+    if (btnHeaderSubmit) btnHeaderSubmit.addEventListener('click', confirmSubmit);
     
-    document.getElementById('btn-cancel-submit').addEventListener('click', () => {
-        document.getElementById('submit-confirm-modal').classList.add('hidden');
-    });
-    document.getElementById('btn-confirm-submit').addEventListener('click', () => {
-        document.getElementById('submit-confirm-modal').classList.add('hidden');
-        finalSubmit(false);
-    });
-    document.getElementById('exit-btn').addEventListener('click', () => {
-        if (window.electronAPI) window.close();
-        else location.reload();
-    });
+    const btnCancelSubmit = document.getElementById('btn-cancel-submit');
+    if (btnCancelSubmit) {
+        btnCancelSubmit.addEventListener('click', () => {
+            const modal = document.getElementById('submit-confirm-modal');
+            if (modal) modal.classList.add('hidden');
+        });
+    }
+
+    const btnConfirmSubmit = document.getElementById('btn-confirm-submit');
+    if (btnConfirmSubmit) {
+        btnConfirmSubmit.addEventListener('click', () => {
+            const modal = document.getElementById('submit-confirm-modal');
+            if (modal) modal.classList.add('hidden');
+            finalSubmit(false);
+        });
+    }
+
+    const btnExit = document.getElementById('exit-btn');
+    if (btnExit) {
+        btnExit.addEventListener('click', () => {
+            if (window.electronAPI) window.close();
+            else location.reload();
+        });
+    }
     
     // Clipboard & Right-click protection
     document.addEventListener('copy', (e) => { e.preventDefault(); handleSecurityEvent('clipboard_attempt_copy'); });
@@ -91,16 +129,14 @@ function initApp() {
     document.addEventListener('paste', (e) => { e.preventDefault(); handleSecurityEvent('clipboard_attempt_paste'); });
     document.addEventListener('contextmenu', e => e.preventDefault());
 
-    // Keyboard Navigation Automation
+    // Keyboard Shortcuts
     document.addEventListener('keydown', handleAutomatedKeybinds);
 }
 
-// Automated Keyboard Shortcuts for Exam Speed
+// Automated Keyboard Shortcuts
 function handleAutomatedKeybinds(e) {
-    // Only active during live exam view
-    if (!views.exam.classList.contains('active')) return;
+    if (!views.exam || !views.exam.classList.contains('active')) return;
     
-    // Ignore if student is typing inside a text or numerical answer box
     const activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
     if (activeTag === 'input' || activeTag === 'textarea') return;
 
@@ -109,8 +145,12 @@ function handleAutomatedKeybinds(e) {
     if (key === 'ARROWRIGHT' || key === 'N' || key === 'PAGEDOWN') {
         e.preventDefault();
         saveState();
-        navigate(1);
-        showToast('Navigated Next', 'info');
+        if (state.currentIndex === state.paper.questions.length - 1) {
+            confirmSubmit();
+        } else {
+            navigate(1);
+            showToast('Navigated Next', 'info');
+        }
     } else if (key === 'ARROWLEFT' || key === 'P' || key === 'PAGEUP') {
         e.preventDefault();
         saveState();
@@ -119,23 +159,21 @@ function handleAutomatedKeybinds(e) {
     } else if (key === 'M') {
         e.preventDefault();
         toggleFlag();
-        showToast(state.flags[state.paper.questions[state.currentIndex].id] ? 'Marked for Review' : 'Review Unmarked', 'info');
     } else if (['1', '2', '3', '4', '5', '6', 'A', 'B', 'C', 'D', 'E', 'F'].includes(key)) {
-        // Quick Option Keybind Selection Automation
         const q = state.paper.questions[state.currentIndex];
         if (!q) return;
         const qType = (q.type || 'mcq').toLowerCase();
         if (['mcq', 'single_choice', 'true_false'].includes(qType)) {
             let optIndex = -1;
             if (['1','2','3','4','5','6'].includes(key)) optIndex = parseInt(key, 10) - 1;
-            else optIndex = key.charCodeAt(0) - 65; // 'A' -> 0, 'B' -> 1
+            else optIndex = key.charCodeAt(0) - 65;
 
             const opts = q.options || (q.type === 'true_false' ? ['True', 'False'] : []);
             if (optIndex >= 0 && optIndex < opts.length) {
                 e.preventDefault();
                 const val = (q.type === 'true_false' ? String(opts[optIndex]) : String(optIndex));
                 state.responses[q.id] = val;
-                renderQuestion();
+                updateQuestionUI();
                 updatePalette();
                 saveState();
                 showToast(`Option ${opts[optIndex]} Selected`, 'success');
@@ -144,7 +182,7 @@ function handleAutomatedKeybinds(e) {
     }
 }
 
-// Automated UI Toast Feedback Component
+// Automated UI Toast Feedback
 function showToast(message, type = 'info') {
     const existing = document.querySelector('.auto-toast');
     if (existing) existing.remove();
@@ -159,16 +197,15 @@ function showToast(message, type = 'info') {
     }, 2400);
 }
 
-// --- Student UUID Authentication ---
+// --- Student Authentication ---
 
 async function handleLogin(e) {
     e.preventDefault();
     const btn = document.getElementById('start-verification-btn');
     const errBox = document.getElementById('login-error');
     
-    btn.disabled = true;
-    btn.innerHTML = `<span>Verifying...</span>`;
-    errBox.classList.add('hidden');
+    if (btn) { btn.disabled = true; btn.innerHTML = `<span>Verifying...</span>`; }
+    if (errBox) errBox.classList.add('hidden');
     
     const uuidInput = document.getElementById('uuid').value.trim();
     
@@ -200,26 +237,24 @@ async function handleLogin(e) {
         await fetchPaper();
     } catch (err) {
         console.error(err);
-        if (err.message.includes('Failed to fetch')) {
-            showLoginError("Security Node connection lost. Offline exam environment active.");
-        } else {
-            showLoginError(err.message || "Verification failed. Check Student UUID.");
-        }
+        showLoginError(err.message || "Verification failed. Check Student UUID.");
         resetLoginBtn();
     }
 }
 
 function resetLoginBtn() {
     const btn = document.getElementById('start-verification-btn');
-    btn.disabled = false;
-    btn.innerHTML = `<span>Start Verification</span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>`;
+    if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = `<span>Start Verification</span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>`;
+    }
 }
 
 function showLoginError(msg) {
     const errBox = document.getElementById('login-error');
     const errText = document.getElementById('login-error-text');
-    errText.textContent = msg;
-    errBox.classList.remove('hidden');
+    if (errText) errText.textContent = msg;
+    if (errBox) errBox.classList.remove('hidden');
 }
 
 async function fetchPaper() {
@@ -260,10 +295,8 @@ function startExam() {
     views.exam.classList.remove('hidden');
     views.exam.classList.add('active');
     
-    // Header Identity Setup
     document.getElementById('header-uuid').textContent = state.uuid;
     
-    // Apply tri-layer forensic watermark overlay
     setTimeout(() => {
         const wmText = `${state.uuid} - ${new Date().toISOString().split('T')[0]}`;
         const overlay = document.getElementById('watermark-overlay');
@@ -279,24 +312,7 @@ function startExam() {
 }
 
 function resumeExam() {
-    views.login.classList.remove('active');
-    views.login.classList.add('hidden');
-    views.exam.classList.remove('hidden');
-    views.exam.classList.add('active');
-    
-    document.getElementById('header-uuid').textContent = state.uuid;
-    
-    setTimeout(() => {
-        const wmText = `${state.uuid} - ${new Date().toISOString().split('T')[0]}`;
-        const overlay = document.getElementById('watermark-overlay');
-        if (overlay) overlay.textContent = wmText;
-    }, 100);
-    
-    buildPalette();
-    renderQuestion();
-    startTimer();
-    startHeartbeat();
-    showToast('Session Restored Successfully', 'info');
+    startExam();
 }
 
 // --- MODULAR QUESTION RENDERER ---
@@ -373,6 +389,7 @@ class QuestionRenderer {
             card.addEventListener('click', () => {
                 const val = (q.type === 'true_false' ? String(opt) : String(idx));
                 onAnswerChange(val);
+                renderQuestion();
                 showToast(`Option ${letters[idx % letters.length]} Saved`, 'success');
             });
 
@@ -419,6 +436,7 @@ class QuestionRenderer {
                     newArr.push(val);
                 }
                 onAnswerChange(newArr.length > 0 ? newArr : null);
+                renderQuestion();
             });
 
             container.appendChild(card);
@@ -508,29 +526,20 @@ function renderQuestion() {
     const total = state.paper.questions.length;
     state.visited[q.id] = true;
     
-    // Progress Counters
-    const answeredCount = calculateAnsweredCount();
-    document.getElementById('answered-count').textContent = answeredCount;
-    document.getElementById('total-count').textContent = total;
-    
-    const progressPercent = total > 0 ? Math.round((answeredCount / total) * 100) : 0;
-    document.getElementById('progress-circle').setAttribute('stroke-dasharray', `${progressPercent}, 100`);
-    document.getElementById('progress-text').textContent = `${progressPercent}%`;
+    updateProgressUI(total);
 
-    // Question Header Title
+    // Question Counter & Badges
     document.getElementById('q-counter').textContent = `QUESTION ${state.currentIndex + 1} OF ${total}`;
     
-    // Metadata Badges
     const metadataStr = q.metadata || '';
     const parts = metadataStr.split('|');
     document.getElementById('q-subject').textContent = q.subject || parts[0] || 'Physics';
     document.getElementById('q-topic').textContent = q.topic || parts[1] || 'Dynamics';
     document.getElementById('q-difficulty').textContent = q.difficulty ? `Diff: ${q.difficulty}` : (parts[2] || 'Medium');
     
-    // Question Text Content
     document.getElementById('q-text').textContent = q.text || 'Question content missing.';
     
-    // Universal Question Answer Area
+    // Render Answer Options
     const ansArea = document.getElementById('answer-area');
     const currentAns = state.responses[q.id];
 
@@ -540,52 +549,77 @@ function renderQuestion() {
         } else {
             delete state.responses[q.id];
         }
-        renderQuestion();
+        updateQuestionUI();
         updatePalette();
         saveState();
     });
     
-    // Status Info Banner below question
+    updateQuestionUI();
+    updatePalette();
+}
+
+function updateProgressUI(total) {
+    const answeredCount = calculateAnsweredCount();
+    document.getElementById('answered-count').textContent = answeredCount;
+    document.getElementById('total-count').textContent = total;
+    
+    const progressPercent = total > 0 ? Math.round((answeredCount / total) * 100) : 0;
+    document.getElementById('progress-circle').setAttribute('stroke-dasharray', `${progressPercent}, 100`);
+    document.getElementById('progress-text').textContent = `${progressPercent}%`;
+}
+
+function updateQuestionUI() {
+    if (!state.paper || !state.paper.questions) return;
+    const q = state.paper.questions[state.currentIndex];
+    const total = state.paper.questions.length;
+
+    updateProgressUI(total);
+
+    // Status Banner
     const statusText = document.getElementById('answer-status-text');
-    if (hasAnswer(q.id)) {
-        statusText.textContent = "Answer recorded. Click 'Save & Next' or navigate to proceed.";
-    } else {
-        statusText.textContent = "You have not answered this question yet.";
+    if (statusText) {
+        if (hasAnswer(q.id)) {
+            statusText.textContent = "Answer recorded. Click 'Save & Next' or navigate to proceed.";
+        } else {
+            statusText.textContent = "You have not answered this question yet.";
+        }
     }
 
-    // Flag / Mark for Review Button
+    // Flag Button
     const flagBtn = document.getElementById('btn-flag');
-    if (state.flags[q.id]) {
-        flagBtn.style.background = '#fffbeb';
-        flagBtn.style.borderColor = '#f59e0b';
-        flagBtn.style.color = '#d97706';
-        flagBtn.querySelector('span').textContent = 'Unmark Review';
-    } else {
-        flagBtn.style.background = '';
-        flagBtn.style.borderColor = '';
-        flagBtn.style.color = '';
-        flagBtn.querySelector('span').textContent = 'Mark for Review';
+    if (flagBtn) {
+        if (state.flags[q.id]) {
+            flagBtn.style.background = '#fffbeb';
+            flagBtn.style.borderColor = '#f59e0b';
+            flagBtn.style.color = '#d97706';
+            flagBtn.querySelector('span').textContent = 'Unmark Review';
+        } else {
+            flagBtn.style.background = '';
+            flagBtn.style.borderColor = '';
+            flagBtn.style.color = '';
+            flagBtn.querySelector('span').textContent = 'Mark for Review';
+        }
     }
 
     // Clear Button
     const clearBtn = document.getElementById('btn-clear');
-    if (hasAnswer(q.id)) {
-        clearBtn.classList.remove('hidden');
-    } else {
-        clearBtn.classList.add('hidden');
+    if (clearBtn) {
+        if (hasAnswer(q.id)) clearBtn.classList.remove('hidden');
+        else clearBtn.classList.add('hidden');
     }
-    
+
     // Navigation Buttons
-    document.getElementById('btn-prev').disabled = state.currentIndex === 0;
+    const prevBtn = document.getElementById('btn-prev');
+    if (prevBtn) prevBtn.disabled = state.currentIndex === 0;
     
     const nextBtn = document.getElementById('btn-next');
-    if (state.currentIndex === total - 1) {
-        nextBtn.querySelector('span').textContent = 'Save (Last)';
-    } else {
-        nextBtn.querySelector('span').textContent = 'Save & Next';
+    if (nextBtn) {
+        if (state.currentIndex === total - 1) {
+            nextBtn.querySelector('span').textContent = 'Save (Last)';
+        } else {
+            nextBtn.querySelector('span').textContent = 'Save & Next';
+        }
     }
-    
-    updatePalette();
 }
 
 function hasAnswer(qId) {
@@ -613,8 +647,10 @@ function navigate(dir) {
 function toggleFlag() {
     const qId = state.paper.questions[state.currentIndex].id;
     state.flags[qId] = !state.flags[qId];
-    renderQuestion();
+    updateQuestionUI();
+    updatePalette();
     saveState();
+    showToast(state.flags[qId] ? 'Marked for Review' : 'Review Unmarked', 'info');
 }
 
 function clearAnswer() {
@@ -629,6 +665,7 @@ function clearAnswer() {
 
 function buildPalette() {
     const grid = document.getElementById('question-palette');
+    if (!grid) return;
     grid.innerHTML = '';
     
     state.paper.questions.forEach((q, idx) => {
@@ -638,6 +675,7 @@ function buildPalette() {
         node.textContent = idx + 1;
         
         node.addEventListener('click', () => {
+            saveState();
             state.currentIndex = idx;
             renderQuestion();
             saveState();
@@ -704,14 +742,10 @@ function updateTimerDisplay() {
     const s = state.remainingSeconds % 60;
     
     const timerElem = document.getElementById('live-timer');
-    timerElem.textContent = 
-        `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-
-    // Low time urgency animation
-    if (state.remainingSeconds <= 300) {
-        timerElem.classList.add('urgent');
-    } else {
-        timerElem.classList.remove('urgent');
+    if (timerElem) {
+        timerElem.textContent = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        if (state.remainingSeconds <= 300) timerElem.classList.add('urgent');
+        else timerElem.classList.remove('urgent');
     }
 }
 
@@ -724,7 +758,10 @@ function saveState() {
 function updateAutosaveStatus() {
     if (!state.lastSync) return;
     const d = new Date(state.lastSync);
-    document.getElementById('status-autosave').textContent = `Last saved: ${d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'})}`;
+    const statusElem = document.getElementById('status-autosave');
+    if (statusElem) {
+        statusElem.textContent = `Last saved: ${d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'})}`;
+    }
 }
 
 function startHeartbeat() {
@@ -755,10 +792,12 @@ async function syncWithBackend() {
             body: JSON.stringify(payload)
         });
         
-        if (!res.ok) throw new Error('Sync failed');
-        
-        securityEventsQueue = [];
-        updateConnectionStatus(true);
+        if (res.ok) {
+            securityEventsQueue = [];
+            updateConnectionStatus(true);
+        } else {
+            updateConnectionStatus(false);
+        }
     } catch (err) {
         updateConnectionStatus(false);
     }
@@ -769,13 +808,13 @@ function updateConnectionStatus(isConnected) {
     const nodeStatus = document.getElementById('status-node');
     
     if (isConnected) {
-        banner.classList.add('hidden');
+        if (banner) banner.classList.add('hidden');
         if (nodeStatus) {
             nodeStatus.textContent = 'Connected';
             nodeStatus.className = 'value connected';
         }
     } else {
-        banner.classList.remove('hidden');
+        if (banner) banner.classList.remove('hidden');
         if (nodeStatus) {
             nodeStatus.textContent = 'Reconnecting...';
             nodeStatus.className = 'value';
@@ -794,7 +833,6 @@ function handleSecurityEvent(eventType) {
     };
     securityEventsQueue.push(event);
     
-    // Clear clipboard
     navigator.clipboard.writeText('').catch(() => {});
     
     if (state.uuid) {
@@ -813,20 +851,29 @@ function handleSecurityEvent(eventType) {
 
 function confirmSubmit() {
     const answered = calculateAnsweredCount();
-    const total = state.paper.questions.length;
+    const total = state.paper ? state.paper.questions.length : 0;
     const review = Object.keys(state.flags).filter(k => state.flags[k]).length;
     
-    document.getElementById('confirm-answered').textContent = answered;
-    document.getElementById('confirm-unanswered').textContent = total - answered;
-    document.getElementById('confirm-review').textContent = review;
+    const ansElem = document.getElementById('confirm-answered');
+    const unansElem = document.getElementById('confirm-unanswered');
+    const revElem = document.getElementById('confirm-review');
+
+    if (ansElem) ansElem.textContent = answered;
+    if (unansElem) unansElem.textContent = total - answered;
+    if (revElem) revElem.textContent = review;
     
-    document.getElementById('submit-confirm-modal').classList.remove('hidden');
+    const modal = document.getElementById('submit-confirm-modal');
+    if (modal) modal.classList.remove('hidden');
 }
 
 async function finalSubmit(isAuto = false) {
+    if (isSubmitting) return;
+    isSubmitting = true;
+
     clearInterval(timerInterval);
     clearInterval(heartbeatInterval);
     
+    saveState();
     handleSecurityEvent(isAuto ? 'exam_auto_submit' : 'exam_submit');
     
     try {
@@ -863,13 +910,19 @@ async function finalSubmit(isAuto = false) {
 function showReceipt(data) {
     localStorage.removeItem(STORAGE_KEY);
     
-    document.getElementById('receipt-hash').textContent = data.receipt_hash || 'N/A';
-    document.getElementById('receipt-time').textContent = new Date().toLocaleString();
+    const hashElem = document.getElementById('receipt-hash');
+    const timeElem = document.getElementById('receipt-time');
+
+    if (hashElem) hashElem.textContent = data.receipt_hash || 'N/A';
+    if (timeElem) timeElem.textContent = new Date().toLocaleString();
     
     if (data.score !== undefined) {
-        document.getElementById('score-row').classList.remove('hidden');
-        document.getElementById('receipt-score').textContent = `${data.score}%`;
+        const scoreRow = document.getElementById('score-row');
+        const scoreVal = document.getElementById('receipt-score');
+        if (scoreRow) scoreRow.classList.remove('hidden');
+        if (scoreVal) scoreVal.textContent = `${data.score}%`;
     }
     
-    document.getElementById('receipt-modal').classList.remove('hidden');
+    const modal = document.getElementById('receipt-modal');
+    if (modal) modal.classList.remove('hidden');
 }
