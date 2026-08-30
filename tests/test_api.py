@@ -22,7 +22,7 @@ def test_admin_dashboard_auth():
         assert response.status_code == 422 # FastAPI validation error for missing header
         
         response = test_client.get("/api/v1/admin/dashboard", headers={"x-admin-token": "invalid"})
-        assert response.status_code == 403
+        assert response.status_code in [401, 403]
 
 def test_health_endpoint():
     with TestClient(app) as test_client:
@@ -147,10 +147,55 @@ def test_calculate_risk_level():
     assert staff.calculate_risk_level(75) == "HIGH"
     assert staff.calculate_risk_level(95) == "CRITICAL"
 
-def test_staff_view_permissions():
-    from app.services import staff
-    assert staff.can_view_question("REVIEWER", 2, 99, assigned_question_ids=[1, 2]) is False
-    assert staff.can_view_question("REVIEWER", 2, 1, assigned_question_ids=[1, 2]) is True
-    assert staff.can_view_question("QUESTION_CREATOR", 1, 99) is False
-    assert staff.can_view_question("SECURITY_ADMIN", 4, 1) is False
+def test_rbac_permissions_all_roles():
+    from app.core.config import settings
+    with TestClient(app) as test_client:
+        admin_headers = {"x-admin-token": settings.ADMIN_TOKEN, "x-staff-role": "MAIN_ADMIN"}
+        creator_headers = {"x-admin-token": settings.ADMIN_TOKEN, "x-staff-role": "QUESTION_CREATOR"}
+        reviewer_headers = {"x-admin-token": settings.ADMIN_TOKEN, "x-staff-role": "QUESTION_REVIEWER"}
+        controller_headers = {"x-admin-token": settings.ADMIN_TOKEN, "x-staff-role": "EXAM_CONTROLLER"}
+        security_headers = {"x-admin-token": settings.ADMIN_TOKEN, "x-staff-role": "SECURITY_ADMIN"}
+
+        # 1. MAIN_ADMIN has full access
+        assert test_client.get("/api/v1/admin/dashboard", headers=admin_headers).status_code == 200
+        assert test_client.get("/api/v1/admin/students", headers=admin_headers).status_code == 200
+        assert test_client.get("/api/v1/admin/live-sessions", headers=admin_headers).status_code == 200
+        assert test_client.get("/api/v1/admin/submissions", headers=admin_headers).status_code == 200
+        assert test_client.get("/api/v1/admin/audit-logs", headers=admin_headers).status_code == 200
+        assert test_client.get("/api/v1/admin/staff", headers=admin_headers).status_code == 200
+
+        # 2. QUESTION_CREATOR cannot access live sessions or submissions
+        assert test_client.get("/api/v1/admin/live-sessions", headers=creator_headers).status_code == 403
+        assert test_client.get("/api/v1/admin/submissions", headers=creator_headers).status_code == 403
+        assert test_client.get("/api/v1/admin/questions", headers=creator_headers).status_code == 200
+
+        # 3. QUESTION_CREATOR can create question
+        q_resp = test_client.post("/api/v1/admin/questions", headers=creator_headers, json={
+            "subject": "Chemistry",
+            "topic": "Organic",
+            "question_text": "What is the formula of benzene?",
+            "options": ["C6H6", "C6H12", "CH4", "C2H2"],
+            "correct_answer": "C6H6"
+        })
+        assert q_resp.status_code == 200
+
+        # 4. QUESTION_REVIEWER cannot create final exam or access live sessions
+        assert test_client.get("/api/v1/admin/live-sessions", headers=reviewer_headers).status_code == 403
+        assert test_client.get("/api/v1/admin/submissions", headers=reviewer_headers).status_code == 403
+
+        # 5. EXAM_CONTROLLER can access students & live sessions but cannot create questions
+        assert test_client.get("/api/v1/admin/students", headers=controller_headers).status_code == 200
+        assert test_client.get("/api/v1/admin/live-sessions", headers=controller_headers).status_code == 200
+        assert test_client.post("/api/v1/admin/questions", headers=controller_headers, json={"subject": "X", "topic": "Y", "question_text": "Q", "correct_answer": "A"}).status_code == 403
+
+        # 6. SECURITY_ADMIN can access audit/live sessions, but answer keys are stripped from questions
+        assert test_client.get("/api/v1/admin/audit-logs", headers=security_headers).status_code == 200
+        assert test_client.get("/api/v1/admin/live-sessions", headers=security_headers).status_code == 200
+        assert test_client.post("/api/v1/admin/questions", headers=security_headers, json={"subject": "X", "topic": "Y", "question_text": "Q", "correct_answer": "A"}).status_code == 403
+        q_sec = test_client.get("/api/v1/admin/questions", headers=security_headers).json()
+        for q in q_sec.get("questions", []):
+            assert "correct_answer" not in q
+
+        # 7. Invalid token returns 401
+        assert test_client.get("/api/v1/admin/dashboard", headers={"x-admin-token": "bad-token"}).status_code == 401
 

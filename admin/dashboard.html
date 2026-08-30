@@ -469,6 +469,11 @@
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
             <span>Node Health</span>
         </a>
+
+        <a class="nav-tab-item" href="#/staff-directory">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+            <span>Staff Directory</span>
+        </a>
     </nav>
 
     <!-- 3. MAIN VIEWPORT & SPA MODULES -->
@@ -771,6 +776,22 @@
             </div>
         </section>
 
+        <!-- MODULE 11: #/staff-directory -->
+        <section id="pane-staff-directory" class="view-pane">
+            <div class="table-card">
+                <div class="table-header-bar">
+                    <span class="table-title">Staff Directory & Role-Based Access Control (RBAC)</span>
+                    <button class="btn-primary" onclick="openCreateStaffModal()">+ Add Staff Member</button>
+                </div>
+                <table>
+                    <thead>
+                        <tr><th>ID</th><th>NAME</th><th>ROLE</th><th>STATUS</th><th>RISK SCORE</th><th>PERMISSIONS</th><th>ACTIONS</th></tr>
+                    </thead>
+                    <tbody id="table-staff-list"><tr><td colspan="7" style="text-align:center;">Loading staff roster...</td></tr></tbody>
+                </table>
+            </div>
+        </section>
+
     </main>
 
     <!-- Security Inspector Drawer -->
@@ -828,7 +849,7 @@
         const routes = [
             '#/dashboard', '#/live-sessions', '#/student-roster', '#/submissions',
             '#/audit-logs', '#/forensic-tracer', '#/question-vault',
-            '#/payload-manager', '#/ai-air-gap', '#/node-health'
+            '#/payload-manager', '#/ai-air-gap', '#/node-health', '#/staff-directory'
         ];
 
         function handleHashRoute() {
@@ -866,7 +887,8 @@
                     '#/question-vault': 'Question Vault',
                     '#/payload-manager': 'Payload Manager',
                     '#/ai-air-gap': 'AI Air Gap',
-                    '#/node-health': 'Node Health'
+                    '#/node-health': 'Node Health',
+                    '#/staff-directory': 'Staff Directory & RBAC'
                 };
                 titleElem.textContent = titleMap[hash] || 'Dashboard';
             }
@@ -916,10 +938,81 @@
             ]
         };
 
-        async function fetchAPI(path) {
+        // Role & Token Management
+        let adminToken = localStorage.getItem('X_ADMIN_TOKEN') || 'admin-demo-token';
+        let activeStaffRole = localStorage.getItem('X_STAFF_ROLE') || 'MAIN_ADMIN';
+
+        function setStaffRole(role) {
+            activeStaffRole = role;
+            localStorage.setItem('X_STAFF_ROLE', role);
+            updateRoleUI();
+            pollData();
+        }
+
+        function updateRoleUI() {
+            const roleBadge = document.getElementById('active-role-badge');
+            if (roleBadge) roleBadge.textContent = activeStaffRole;
+
+            // Show/Hide navigation tabs based on active staff role
+            const roleNavMap = {
+                'MAIN_ADMIN': ['#/dashboard', '#/live-sessions', '#/student-roster', '#/submissions', '#/audit-logs', '#/forensic-tracer', '#/question-vault', '#/payload-manager', '#/ai-air-gap', '#/node-health', '#/staff-directory'],
+                'QUESTION_CREATOR': ['#/question-vault'],
+                'QUESTION_REVIEWER': ['#/question-vault'],
+                'EXAM_CONTROLLER': ['#/dashboard', '#/student-roster', '#/live-sessions', '#/payload-manager'],
+                'SECURITY_ADMIN': ['#/dashboard', '#/live-sessions', '#/audit-logs', '#/forensic-tracer', '#/node-health', '#/staff-directory']
+            };
+
+            const allowedRoutes = roleNavMap[activeStaffRole] || roleNavMap['MAIN_ADMIN'];
+
+            document.querySelectorAll('.nav-tab-item, .dropdown-link, [data-target]').forEach(el => {
+                const targetHash = el.getAttribute('href') || el.getAttribute('data-target');
+                if (targetHash && !allowedRoutes.includes(targetHash)) {
+                    el.style.display = 'none';
+                } else {
+                    el.style.display = '';
+                }
+            });
+        }
+
+        function updateConnStatus(label, statusClass) {
+            const statusElem = document.getElementById('conn-status-badge');
+            if (statusElem) {
+                statusElem.textContent = label;
+                statusElem.className = `badge ${statusClass}`;
+            }
+        }
+
+        async function checkHealth() {
             try {
-                const res = await fetch(API_BASE + path);
-                if (!res.ok) throw new Error('HTTP Error');
+                const res = await fetch(`${API_BASE}/api/v1/health`);
+                if (res.ok) {
+                    updateConnStatus('CONNECTED', 'green');
+                } else {
+                    updateConnStatus('DISCONNECTED', 'red');
+                }
+            } catch (e) {
+                updateConnStatus('DISCONNECTED', 'red');
+            }
+        }
+
+        async function fetchAPI(path, options = {}) {
+            try {
+                const headers = Object.assign({
+                    'X-Admin-Token': adminToken,
+                    'X-Staff-Role': activeStaffRole,
+                    'Content-Type': 'application/json'
+                }, options.headers || {});
+                
+                const res = await fetch(API_BASE + path, Object.assign({}, options, { headers }));
+                if (res.status === 403) {
+                    updateConnStatus('ACCESS DENIED (403)', 'red');
+                    return null;
+                }
+                if (res.status === 401) {
+                    updateConnStatus('UNAUTHORIZED (401)', 'red');
+                    return null;
+                }
+                if (!res.ok) throw new Error(`HTTP Error ${res.status}`);
                 return await res.json();
             } catch (e) {
                 return null;
@@ -1034,8 +1127,65 @@
                         </tr>
                     `).join('');
                 }
+
+                // Staff Directory Table
+                const staffList = await fetchAPI('/api/v1/admin/staff');
+                const staffTableElem = document.getElementById('table-staff-list');
+                if (staffTableElem) {
+                    if (Array.isArray(staffList)) {
+                        staffTableElem.innerHTML = staffList.map(s => `
+                            <tr>
+                                <td class="mono">${s.id}</td>
+                                <td><strong>${s.name}</strong></td>
+                                <td><span class="badge purple">${s.role}</span></td>
+                                <td><span class="badge ${s.status === 'active' ? 'green' : 'red'}">${s.status}</span></td>
+                                <td>${s.risk_score || 0} / 100</td>
+                                <td style="font-size:11px; max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${(s.permissions || []).join(', ')}</td>
+                                <td>
+                                    <button class="btn-icon" onclick="toggleStaffStatus(${s.id}, '${s.status}')">${s.status === 'active' ? 'Disable' : 'Enable'}</button>
+                                </td>
+                            </tr>
+                        `).join('');
+                    } else {
+                        staffTableElem.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-muted);">Access restricted to Main Admin</td></tr>`;
+                    }
+                }
             } catch (err) {
                 console.error("Error in pollData:", err);
+            }
+        }
+
+        // --- STAFF MANAGEMENT MODALS & RBAC ACTIONS ---
+        async function openCreateStaffModal() {
+            const name = prompt("Enter Staff Member Name:");
+            if (!name) return;
+            const role = prompt("Enter Role (MAIN_ADMIN, QUESTION_CREATOR, QUESTION_REVIEWER, EXAM_CONTROLLER, SECURITY_ADMIN):", "QUESTION_CREATOR");
+            if (!role) return;
+
+            const res = await fetchAPI('/api/v1/admin/staff', {
+                method: 'POST',
+                body: JSON.stringify({ name, role: role.toUpperCase(), status: 'active' })
+            });
+
+            if (res && res.ok) {
+                alert(`Staff member ${name} created with role ${role.toUpperCase()}`);
+                pollData();
+            } else {
+                alert("Failed to create staff member. Check permissions.");
+            }
+        }
+
+        async function toggleStaffStatus(staffId, currentStatus) {
+            const newStatus = currentStatus === 'active' ? 'disabled' : 'active';
+            const res = await fetchAPI(`/api/v1/admin/staff/${staffId}`, {
+                method: 'PUT',
+                body: JSON.stringify({ status: newStatus })
+            });
+
+            if (res && res.ok) {
+                pollData();
+            } else {
+                alert("Failed to update staff status. Check permissions.");
             }
         }
 
@@ -1142,9 +1292,9 @@
             `;
 
             // Call Backend API or fall back to high-fidelity mock
-            const backendRes = await fetchAPI('/api/v1/admin/trace-leak', {
+            const backendRes = await fetchAPI('/api/v1/admin/forensic/trace', {
                 method: 'POST',
-                body: JSON.stringify({ leak_text: inputVal })
+                body: JSON.stringify({ leaked_text: inputVal, candidate_uuids: [] })
             });
 
             const data = backendRes || {

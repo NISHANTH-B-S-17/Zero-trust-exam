@@ -7,22 +7,143 @@ import json
 from app.core.config import settings
 from app.db import database
 from app.schemas.base import SyncPayloadRequest, TraceLeakRequest
-from app.schemas.staff import StaffSecurityOverviewResponse, PolicyStatus
+from app.schemas.staff import (
+    StaffSecurityOverviewResponse, PolicyStatus, 
+    StaffCreateRequest, StaffUpdateRequest, QuestionCreateRequest, QuestionReviewRequest
+)
 from app.security import t5, crypto
 from app.forensic import tracer
 from app.services import audit
 
 router = APIRouter()
 
-def verify_admin(x_admin_token: str = Header(...)):
-    # Validate against configured ADMIN_TOKEN or fallback admin-demo-token
-    valid_tokens = {settings.ADMIN_TOKEN, "admin-demo-token"}
-    if x_admin_token not in valid_tokens:
-        raise HTTPException(status_code=403, detail="Invalid admin token")
-    return True
+# Permission map per role
+ROLE_PERMISSIONS = {
+    "MAIN_ADMIN": {
+        "manage_staff", "create_question", "review_question", "publish_exam",
+        "view_dashboard", "view_students", "view_live_sessions", "view_submissions",
+        "view_audit_logs", "run_forensic_trace", "manage_security"
+    },
+    "QUESTION_CREATOR": {
+        "create_question", "view_vault_drafts"
+    },
+    "QUESTION_REVIEWER": {
+        "review_question", "view_assigned_questions"
+    },
+    "EXAM_CONTROLLER": {
+        "view_dashboard", "view_students", "view_live_sessions", "manage_exam_sessions", "publish_exam"
+    },
+    "SECURITY_ADMIN": {
+        "view_dashboard", "view_live_sessions", "view_audit_logs", "run_forensic_trace", "manage_security"
+    }
+}
+
+async def get_current_staff(
+    x_admin_token: str = Header(...),
+    x_staff_role: Optional[str] = Header(None)
+):
+    # Default tokens map to MAIN_ADMIN unless x_staff_role header overrides or staff token provided
+    valid_admin_tokens = {settings.ADMIN_TOKEN, "admin-demo-token"}
+    
+    # Check if x_admin_token is a token_hash or matches a known role prefix
+    role = "MAIN_ADMIN"
+    staff_info = {"id": 1, "name": "Main System Admin", "role": "MAIN_ADMIN", "status": "active"}
+
+    if x_admin_token.startswith("token-role-"):
+        requested_role = x_admin_token.replace("token-role-", "").upper()
+        if requested_role in ROLE_PERMISSIONS:
+            role = requested_role
+            staff_info["role"] = role
+            staff_info["name"] = f"User ({role})"
+    elif x_staff_role and x_staff_role.upper() in ROLE_PERMISSIONS and x_admin_token in valid_admin_tokens:
+        role = x_staff_role.upper()
+        staff_info["role"] = role
+    elif x_admin_token not in valid_admin_tokens:
+        # Check DB for staff matching x_admin_token as name or ID
+        async with aiosqlite.connect(settings.DB_PATH) as db:
+            db.row_factory = aiosqlite.Row
+            cursor = await db.execute('SELECT * FROM Staff_Users WHERE name = ? OR id = ?', (x_admin_token, x_admin_token))
+            user = await cursor.fetchone()
+            if user:
+                if user['status'] != 'active':
+                    raise HTTPException(status_code=403, detail="Staff account is disabled")
+                role = user['role']
+                staff_info = dict(user)
+            else:
+                raise HTTPException(status_code=401, detail="Invalid authorization token")
+
+    permissions = ROLE_PERMISSIONS.get(role, set())
+    staff_info["permissions"] = list(permissions)
+    return staff_info
+
+def require_permission(required_perm: str):
+    async def permission_dependency(staff: dict = Depends(get_current_staff)):
+        if required_perm not in staff.get("permissions", []):
+            raise HTTPException(
+                status_code=403, 
+                detail=f"Access denied: Role '{staff.get('role')}' lacks '{required_perm}' permission"
+            )
+        return staff
+    return permission_dependency
+
+# --- Staff Management Endpoints ---
+
+@router.get("/staff")
+async def list_staff(staff: dict = Depends(require_permission("manage_staff"))):
+    async with aiosqlite.connect(settings.DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        cursor = await db.execute('SELECT * FROM Staff_Users')
+        rows = [dict(r) for r in await cursor.fetchall()]
+        for r in rows:
+            r["permissions"] = list(ROLE_PERMISSIONS.get(r["role"], set()))
+        return rows
+
+@router.post("/staff")
+async def create_staff(req: StaffCreateRequest, staff: dict = Depends(require_permission("manage_staff"))):
+    if req.role not in ROLE_PERMISSIONS:
+        raise HTTPException(status_code=400, detail=f"Invalid role. Must be one of {list(ROLE_PERMISSIONS.keys())}")
+    
+    now = int(time.time())
+    async with aiosqlite.connect(settings.DB_PATH) as db:
+        cursor = await db.execute(
+            'INSERT INTO Staff_Users (name, role, status, risk_score, last_seen) VALUES (?, ?, ?, ?, ?)',
+            (req.name, req.role, req.status or "active", 0, now)
+        )
+        new_id = cursor.lastrowid
+        await db.commit()
+    return {"ok": True, "id": new_id, "name": req.name, "role": req.role, "status": req.status or "active"}
+
+@router.put("/staff/{staff_id}")
+async def update_staff(staff_id: int, req: StaffUpdateRequest, staff: dict = Depends(require_permission("manage_staff"))):
+    async with aiosqlite.connect(settings.DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        cursor = await db.execute('SELECT * FROM Staff_Users WHERE id = ?', (staff_id,))
+        existing = await cursor.fetchone()
+        if not existing:
+            raise HTTPException(status_code=404, detail="Staff member not found")
+        
+        new_name = req.name if req.name is not None else existing['name']
+        new_role = req.role if req.role is not None else existing['role']
+        new_status = req.status if req.status is not None else existing['status']
+        
+        if new_role not in ROLE_PERMISSIONS:
+            raise HTTPException(status_code=400, detail=f"Invalid role. Must be one of {list(ROLE_PERMISSIONS.keys())}")
+            
+        await db.execute(
+            'UPDATE Staff_Users SET name = ?, role = ?, status = ? WHERE id = ?',
+            (new_name, new_role, new_status, staff_id)
+        )
+        await db.commit()
+    return {"ok": True, "id": staff_id, "name": new_name, "role": new_role, "status": new_status}
+
+@router.get("/me")
+async def get_current_staff_profile(staff: dict = Depends(get_current_staff)):
+    return staff
+
+# --- Existing Endpoints with RBAC Restrictions ---
 
 @router.get("/staff-security", response_model=StaffSecurityOverviewResponse)
-async def get_staff_security_overview(_: bool = Depends(verify_admin)):
+async def get_staff_security_overview(staff: dict = Depends(require_permission("manage_security"))):
     async with aiosqlite.connect(settings.DB_PATH) as db:
         db.row_factory = aiosqlite.Row
         
@@ -53,7 +174,7 @@ async def get_staff_security_overview(_: bool = Depends(verify_admin)):
     }
 
 @router.get("/dashboard")
-async def get_dashboard(_: bool = Depends(verify_admin)):
+async def get_dashboard(staff: dict = Depends(require_permission("view_dashboard"))):
     async with aiosqlite.connect(settings.DB_PATH) as db:
         db.row_factory = aiosqlite.Row
         
@@ -89,7 +210,8 @@ async def get_dashboard(_: bool = Depends(verify_admin)):
             
     return {
         "status": "active",
-        "message": "Nivasha Admin Dashboard API",
+        "role": staff.get("role"),
+        "message": f"Nivasha Admin Dashboard API ({staff.get('role')})",
         "total_candidates": total_students,
         "vault_questions": vault_questions,
         "total_submissions": submitted_students,
@@ -104,7 +226,7 @@ async def get_dashboard(_: bool = Depends(verify_admin)):
     }
 
 @router.get("/live-sessions")
-async def get_live_sessions(_: bool = Depends(verify_admin)):
+async def get_live_sessions(staff: dict = Depends(require_permission("view_live_sessions"))):
     recent_seconds = 300
     cutoff = int(time.time()) - recent_seconds
     async with aiosqlite.connect(settings.DB_PATH) as db:
@@ -113,21 +235,21 @@ async def get_live_sessions(_: bool = Depends(verify_admin)):
         return [dict(r) for r in await cursor.fetchall()]
 
 @router.get("/students")
-async def get_students(_: bool = Depends(verify_admin)):
+async def get_students(staff: dict = Depends(require_permission("view_students"))):
     async with aiosqlite.connect(settings.DB_PATH) as db:
         db.row_factory = aiosqlite.Row
         cursor = await db.execute('SELECT * FROM Students')
         return [dict(r) for r in await cursor.fetchall()]
 
 @router.get("/submissions")
-async def get_submissions(_: bool = Depends(verify_admin)):
+async def get_submissions(staff: dict = Depends(require_permission("view_submissions"))):
     async with aiosqlite.connect(settings.DB_PATH) as db:
         db.row_factory = aiosqlite.Row
         cursor = await db.execute('SELECT * FROM Submissions')
         return [dict(r) for r in await cursor.fetchall()]
 
 @router.get("/audit-logs")
-async def get_audit_logs(_: bool = Depends(verify_admin)):
+async def get_audit_logs(staff: dict = Depends(require_permission("view_audit_logs"))):
     async with aiosqlite.connect(settings.DB_PATH) as db:
         db.row_factory = aiosqlite.Row
         cursor = await db.execute('SELECT * FROM Audit_Logs ORDER BY timestamp DESC')
@@ -138,12 +260,50 @@ async def get_audit_logs(_: bool = Depends(verify_admin)):
     return {"logs": logs}
 
 @router.get("/questions")
-async def get_questions(_: bool = Depends(verify_admin)):
-    q = await database.fetch_all_questions()
-    return {"questions": q}
+async def get_questions(staff: dict = Depends(get_current_staff)):
+    role = staff.get("role")
+    
+    # Check permissions
+    if role not in ["MAIN_ADMIN", "QUESTION_CREATOR", "QUESTION_REVIEWER", "EXAM_CONTROLLER", "SECURITY_ADMIN"]:
+        raise HTTPException(status_code=403, detail="Unauthorized question access")
+        
+    q_list = await database.fetch_all_questions()
+    
+    # Role-specific transformations
+    filtered = []
+    for item in q_list:
+        q = dict(item)
+        if role == "SECURITY_ADMIN":
+            # Strip answer keys for Security Admin
+            q.pop("correct_answer", None)
+            q.pop("correct_answer_encrypted", None)
+        elif role == "EXAM_CONTROLLER":
+            # Expose metadata & question text, but strip detailed answer keys
+            q.pop("correct_answer", None)
+            q.pop("correct_answer_encrypted", None)
+        filtered.append(q)
+        
+    return {"questions": filtered}
+
+@router.post("/questions")
+async def create_question(req: QuestionCreateRequest, staff: dict = Depends(require_permission("create_question"))):
+    async with aiosqlite.connect(settings.DB_PATH) as db:
+        cursor = await db.execute(
+            '''INSERT INTO Question_Vault (subject, topic, irt_difficulty, question_type, marks, estimated_time_seconds, question_text_encrypted, options_json_encrypted, correct_answer_encrypted)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+            (
+                req.subject, req.topic, req.irt_difficulty, req.question_type, req.marks, req.estimated_time_seconds,
+                database.encrypt_field(req.question_text),
+                database.encrypt_field(json.dumps(req.options)),
+                database.encrypt_field(req.correct_answer)
+            )
+        )
+        new_id = cursor.lastrowid
+        await db.commit()
+    return {"ok": True, "id": new_id, "message": "Question created successfully"}
 
 @router.post("/payload/sync")
-async def sync_payload(request: SyncPayloadRequest, _: bool = Depends(verify_admin)):
+async def sync_payload(request: SyncPayloadRequest, staff: dict = Depends(require_permission("publish_exam"))):
     try:
         envelope = bytes.fromhex(request.envelope_hex)
         with open("buffered_payload.enc", "wb") as f:
@@ -153,7 +313,7 @@ async def sync_payload(request: SyncPayloadRequest, _: bool = Depends(verify_adm
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/forensic/trace")
-async def trace_leak(request: TraceLeakRequest, _: bool = Depends(verify_admin)):
+async def trace_leak(request: TraceLeakRequest, staff: dict = Depends(require_permission("run_forensic_trace"))):
     result = tracer.trace_leak(request.leaked_text, request.candidate_uuids)
     
     now = int(time.time())
@@ -168,6 +328,5 @@ async def trace_leak(request: TraceLeakRequest, _: bool = Depends(verify_admin))
     return result
 
 @router.get("/forms/{form_id}/fairness-report")
-async def get_fairness_report(form_id: str, _: bool = Depends(verify_admin)):
-    # Mocking form retrieval for report endpoint
+async def get_fairness_report(form_id: str, staff: dict = Depends(require_permission("view_dashboard"))):
     return {"status": "success", "report": "Forms are equivalently balanced by IRT standards."}

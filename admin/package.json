@@ -1,0 +1,9 @@
+{
+  "name": "nivasha-admin-centre",
+  "version": "2.0.0",
+  "description": "Nivasha Zero-Trust Admin Command Centre",
+  "scripts": {
+    "start": "npx -y serve . -p 3000",
+    "dev": "npx -y serve . -p 3000"
+  }
+}
