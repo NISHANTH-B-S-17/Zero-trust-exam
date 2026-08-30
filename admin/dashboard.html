@@ -835,6 +835,30 @@
             try {
                 const res = await fetch(API_BASE + path);
                 if (!res.ok) throw new Error('HTTP Error');
+        // --- API Client ---
+        const isLocalHost = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost';
+        const API_BASE = isLocalHost ? 'http://127.0.0.1:8080' : '';
+        // Check for admin token in URL or use a default one for now
+        const urlParams = new URLSearchParams(window.location.search);
+        const adminToken = urlParams.get('token') || localStorage.getItem('admin_token') || 'admin-demo-token';
+        localStorage.setItem('admin_token', adminToken);
+        
+        let demoModeActive = false;
+
+        async function fetchAPI(path, options = {}) {
+            try {
+                // Support both full path starting with /api/v1 or endpoint relative path
+                const endpoint = path.startsWith('/api/v1') ? path.substring(7) : path;
+                const url = API_BASE + (endpoint.startsWith('/') ? endpoint : '/' + endpoint);
+                const res = await fetch(url, {
+                    ...options,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-admin-token': adminToken,
+                        ...(options.headers || {})
+                    }
+                });
+                if(!res.ok) throw new Error(`HTTP ${res.status}`);
                 return await res.json();
             } catch (e) {
                 return null;
@@ -848,6 +872,58 @@
             const audit = await fetchAPI('/api/v1/admin/audit-logs') || DEMO_DATA.audit;
 
             const rList = Array.isArray(roster) ? roster : (roster.data || DEMO_DATA.roster);
+            const data = await fetchAPI('/api/v1/admin/dashboard');
+            
+            const errBanner = document.getElementById('error-banner');
+            const dot = document.getElementById('conn-dot');
+            const text = document.getElementById('conn-text');
+            const demoBanner = document.getElementById('demo-banner');
+
+            if (!data) {
+                if (isLocalHost) {
+                    errBanner.innerHTML = '<div><strong>Local backend not connected:</strong> Start backend at <code>http://127.0.0.1:8080</code> for live telemetry and data.</div>';
+                    errBanner.classList.add('active');
+                    errBanner.style.display = 'block';
+                    demoBanner.classList.remove('active');
+                    dot.classList.add('offline');
+                    text.textContent = 'Local backend not connected';
+                    if (!demoModeActive) {
+                        demoModeActive = true;
+                        renderMockTables();
+                    }
+                } else {
+                    // Check if health endpoint responds on Vercel
+                    const healthData = await fetchAPI('/api/v1/health');
+                    if (healthData && (healthData.status === 'ok' || healthData.service)) {
+                        errBanner.style.display = 'none';
+                        errBanner.classList.remove('active');
+                        demoBanner.classList.add('active');
+                        dot.classList.remove('offline');
+                        text.textContent = 'Vercel Preview Mode';
+                        if (!demoModeActive) {
+                            demoModeActive = true;
+                            renderMockTables();
+                        }
+                    } else {
+                        // Vercel serverless preview fallback with mock tables
+                        errBanner.style.display = 'none';
+                        errBanner.classList.remove('active');
+                        demoBanner.classList.add('active');
+                        dot.classList.remove('offline');
+                        text.textContent = 'Vercel Preview Mode';
+                        if (!demoModeActive) {
+                            demoModeActive = true;
+                            renderMockTables();
+                        }
+                    }
+                }
+                return;
+            }
+
+            // Online!
+            errBanner.classList.remove('active');
+            dot.classList.remove('offline');
+            text.textContent = isLocalHost ? '127.0.0.1:8080' : 'Vercel API Connected';
             
             // Dashboard Telemetry Table
             document.getElementById('dash-telemetry').innerHTML = rList.map(c => `

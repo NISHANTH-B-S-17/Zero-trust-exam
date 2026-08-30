@@ -27,6 +27,6 @@ def trace_leak(leaked_text: str, candidate_uuids: list = None) -> dict:
         "likely_source_session": None,
         "method": "none",
         "confidence": 0.0,
-        "forensic_investigation_lead": "No strong watermark recovered. Consider OCR or manual semantic review.",
+        "forensic_investigation_lead": "No strong watermark recovered. Consider OCR or manual semantic review for an investigation lead.",
         "note": "Provides investigation leads, not legal proof of guilt."
     }

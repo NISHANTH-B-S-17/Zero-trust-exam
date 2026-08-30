@@ -1,0 +1,54 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "api/index.py",
+      "use": "@vercel/python",
+      "config": {
+        "includeFiles": "backend/**"
+      }
+    },
+    {
+      "src": "admin/**",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "kiosk/**",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "api/index.py"
+    },
+    {
+      "src": "/ws/(.*)",
+      "dest": "api/index.py"
+    },
+    {
+      "src": "/dashboard",
+      "dest": "admin/dashboard.html"
+    },
+    {
+      "src": "/admin/(.*)",
+      "dest": "admin/$1"
+    },
+    {
+      "src": "/kiosk",
+      "dest": "kiosk/index.html"
+    },
+    {
+      "src": "/kiosk/(.*)",
+      "dest": "kiosk/$1"
+    },
+    {
+      "src": "/$",
+      "dest": "admin/dashboard.html"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "admin/$1"
+    }
+  ]
+}

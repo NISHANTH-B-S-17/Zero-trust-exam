@@ -44,7 +44,7 @@ def test_zwsp_uuid_encode_decode():
 def test_ambiguous_leak_returns_none():
     leak = "This is a leaked question with no watermarks."
     result = steganography.trace_leak(leak)
-    assert result["layer1_uuid"] is None
+    assert result["student_uuid"] is None
 
 # --- generator.py tests ---
 
@@ -78,19 +78,25 @@ def test_fastapi_lifespan_duplicate():
 
 def test_database_creation():
     import asyncio
+    from app.db import database as app_db
     async def run_test():
-        db = await database.get_db()
-        assert db is not None
-        await db.close()
+        await app_db.init_db()
+        await app_db.seed_demo_data()
+        all_q = await app_db.fetch_all_questions()
+        assert len(all_q) >= 2
     
     asyncio.run(run_test())
 
-def test_firebase_config_exists():
+def test_vercel_config_exists():
     import os
-    assert os.path.exists("firebase.json")
-    assert os.path.exists(".firebaserc")
+    admin_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../admin'))
+    index_path = os.path.join(admin_dir, 'index.html')
+    dashboard_path = os.path.join(admin_dir, 'dashboard.html')
+    vercel_path = os.path.join(admin_dir, 'vercel.json')
+    assert os.path.exists(index_path)
+    assert os.path.exists(dashboard_path)
+    assert os.path.exists(vercel_path)
     
-    with open("firebase.json", "r") as f:
+    with open(vercel_path, "r") as f:
         content = f.read()
-        assert "admin" in content
-        assert "dashboard.html" in content
+        assert "index.html" in content
