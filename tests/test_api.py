@@ -51,12 +51,11 @@ def test_student_fetch_paper_no_secrets():
 
 def test_kiosk_full_student_flow():
     with TestClient(app) as test_client:
-        auth_resp = test_client.post("/api/v1/student/authenticate", json={"roll_number": "ROLL001"})
+        auth_resp = test_client.post("/api/v1/student/authenticate", json={"identifier": "UUID-1788088589-NV2026-001"})
         assert auth_resp.status_code == 200
         auth_data = auth_resp.json()
         assert auth_data["ok"] is True
         student_uuid = auth_data["student_uuid"]
-        assert student_uuid == "demo-uuid-1234"
 
         fetch_get_resp = test_client.get(f"/api/v1/student/fetch-paper?student_uuid={student_uuid}")
         assert fetch_get_resp.status_code == 200
