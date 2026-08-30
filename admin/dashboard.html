@@ -5,9 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ZERO TRUST EXAM ENGINE | ADMIN COMMAND CENTRE</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <style>
         :root {
-            /* Light Purple & Cyan Design Tokens from Reference Image 2 */
+            /* Light Purple & Cyan Design Tokens from Screenshot */
             --bg-page: #f6f7fb;
             --bg-card: #ffffff;
             --bg-subtle: #f1f5f9;
@@ -71,8 +73,19 @@
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
-        /* Background Watermark Removed */
-        .app-watermark-overlay { display: none !important; }
+        /* Background Shield Watermark */
+        .app-watermark-overlay {
+            position: fixed;
+            inset: 0;
+            background-image: url('assets/logo.jpeg');
+            background-repeat: no-repeat;
+            background-position: 80% 55%;
+            background-size: 460px;
+            opacity: 0.028;
+            pointer-events: none;
+            z-index: 0;
+            filter: grayscale(10%);
+        }
 
         /* 1. TOP HEADER & BRAND BAR */
         .top-brand-bar {
@@ -112,7 +125,7 @@
         }
         .btn-icon:hover { border-color: var(--purple-primary); color: var(--purple-primary); background: var(--purple-light); }
 
-        /* 2. TOP HORIZONTAL NAVIGATION (NO LEFT SIDEBAR) */
+        /* 2. TOP HORIZONTAL NAVIGATION BAR (NO LEFT SIDEBAR) */
         .top-horizontal-nav {
             background-color: var(--bg-card);
             border-bottom: 1px solid var(--border-color);
@@ -182,10 +195,45 @@
 
         .view-pane.active {
             display: flex;
-            animation: paneFade 0.25s ease-out;
+            animation: cardSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        @keyframes paneFade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes cardSlideUp { 
+            from { opacity: 0; transform: translateY(12px); } 
+            to { opacity: 1; transform: translateY(0); } 
+        }
+
+        @keyframes floatSlow {
+            0% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-6px) rotate(1deg); }
+            100% { transform: translateY(0px) rotate(0deg); }
+        }
+
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 10px rgba(124, 58, 237, 0.15); }
+            50% { box-shadow: 0 0 22px rgba(124, 58, 237, 0.35); }
+            100% { box-shadow: 0 0 10px rgba(124, 58, 237, 0.15); }
+        }
+
+        @keyframes scanBeam {
+            0% { top: 0%; opacity: 0.8; }
+            50% { opacity: 0.4; }
+            100% { top: 100%; opacity: 0.8; }
+        }
+
+        .scanning-radar {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .scanning-radar::after {
+            content: '';
+            position: absolute;
+            left: 0; right: 0; height: 3px;
+            background: linear-gradient(90deg, transparent 0%, var(--purple-primary) 50%, transparent 100%);
+            animation: scanBeam 2.5s infinite ease-in-out;
+            pointer-events: none;
+        }
 
         /* CARDS & SPACING */
         .card {
@@ -337,6 +385,8 @@
     </style>
 </head>
 <body>
+    <!-- Background Shield Watermark -->
+    <div class="app-watermark-overlay"></div>
 
     <!-- 1. TOP BRAND HEADER -->
     <header class="top-brand-bar">
@@ -757,7 +807,7 @@
         <div class="sys-item"><span>ENCRYPTION STATUS:</span><span class="val">🔒 AES-256 • RSA-4096</span></div>
         <div class="sys-item"><span>TELEMETRY STREAM:</span><span class="val">Auto-refresh in 15s ●</span></div>
         <div class="sys-item"><span>SYSTEM TIME:</span><span class="val" id="sys-clock">30/08/2026 02:48:55</span></div>
-        <div class="sys-item"><span>OPERATOR / HOST:</span><span class="val host" id="host-display">Vercel Node</span></div>
+        <div class="sys-item"><span>OPERATOR / HOST:</span><span class="val host" id="host-display">http://127.0.0.1:8080</span></div>
     </footer>
 
     <script>
@@ -765,6 +815,7 @@
         const currentOrigin = window.location.origin;
         const isFileProtocol = currentOrigin.startsWith('file:');
         const isLocal = currentOrigin.includes('127.0.0.1') || currentOrigin.includes('localhost');
+        const API_BASE = isLocal ? 'http://127.0.0.1:8080' : (isFileProtocol ? 'http://127.0.0.1:8080' : currentOrigin);
 
         const hostDisplayElem = document.getElementById('host-display');
         if (hostDisplayElem) {
@@ -773,7 +824,7 @@
             else hostDisplayElem.textContent = `${window.location.hostname} (Vercel Node)`;
         }
 
-        // SPA HASH ROUTER FOR 10 MODULES
+        // SPA HASH ROUTER FOR ALL MODULES
         const routes = [
             '#/dashboard', '#/live-sessions', '#/student-roster', '#/submissions',
             '#/audit-logs', '#/forensic-tracer', '#/question-vault',
@@ -785,8 +836,8 @@
             if (!routes.includes(hash)) hash = '#/dashboard';
 
             // Active Tab Styling
-            document.querySelectorAll('.nav-tab-item, [href^="#/"]').forEach(el => {
-                const targetHash = el.getAttribute('href');
+            document.querySelectorAll('.nav-tab-item, .dropdown-link, [data-target]').forEach(el => {
+                const targetHash = el.getAttribute('href') || el.getAttribute('data-target');
                 if (targetHash === hash) {
                     el.classList.add('active');
                 } else {
@@ -801,11 +852,30 @@
             if (activePane) {
                 activePane.classList.add('active');
             }
+
+            // Update Breadcrumb Titles
+            const titleElem = document.getElementById('header-title');
+            if (titleElem) {
+                const titleMap = {
+                    '#/dashboard': 'Dashboard',
+                    '#/live-sessions': 'Live Sessions',
+                    '#/student-roster': 'Student Roster',
+                    '#/submissions': 'Submissions',
+                    '#/audit-logs': 'Audit Logs',
+                    '#/forensic-tracer': 'Forensic Tracer',
+                    '#/question-vault': 'Question Vault',
+                    '#/payload-manager': 'Payload Manager',
+                    '#/ai-air-gap': 'AI Air Gap',
+                    '#/node-health': 'Node Health'
+                };
+                titleElem.textContent = titleMap[hash] || 'Dashboard';
+            }
         }
 
         window.addEventListener('hashchange', handleHashRoute);
         window.addEventListener('DOMContentLoaded', () => {
             handleHashRoute();
+            // Bind click listeners for instant navigation
             document.querySelectorAll('a[href^="#/"]').forEach(link => {
                 link.addEventListener('click', (e) => {
                     const hash = link.getAttribute('href');
@@ -969,17 +1039,6 @@
             }
         }
 
-        // Inspector Drawer Actions
-        function openInspector(name, uuid) {
-            document.getElementById('inspector-candidate-name').textContent = name || 'Aarav Sharma';
-            document.getElementById('inspector-session-id').textContent = uuid || 'S-8217';
-            document.getElementById('security-inspector-drawer').classList.add('active');
-        }
-
-        function closeInspector(e) {
-            document.getElementById('security-inspector-drawer').classList.remove('active');
-        }
-
         // --- FORENSIC LEAK TRACER FUNCTIONS ---
         let lastTraceResult = null;
 
@@ -987,6 +1046,8 @@
             const val = document.getElementById('forensic-input').value;
             const counter = document.getElementById('char-counter');
             if (counter) counter.textContent = `${val.length} chars`;
+
+            // Live ZWSP Inspection
             inspectUnicode(val);
         }
 
@@ -1019,16 +1080,16 @@
                 const char = text[i];
                 const code = char.charCodeAt(0);
 
-                if (code === 0x200B) {
-                    html += `<span style="background:var(--purple-primary); color:white; padding:1px 6px; border-radius:4px; font-size:10px; font-weight:bold; margin:0 2px;">[ZWSP]</span>`;
+                if (code === 0x200B) { // ZWSP
+                    html += `<span style="background:var(--pink-primary); color:white; padding:1px 6px; border-radius:4px; font-size:10px; font-weight:bold; margin:0 2px;">[ZWSP]</span>`;
                     binaryStream += '0';
-                } else if (code === 0x200C) {
-                    html += `<span style="background:var(--purple-hover); color:white; padding:1px 6px; border-radius:4px; font-size:10px; font-weight:bold; margin:0 2px;">[ZWNJ]</span>`;
+                } else if (code === 0x200C) { // ZWNJ
+                    html += `<span style="background:var(--purple-primary); color:white; padding:1px 6px; border-radius:4px; font-size:10px; font-weight:bold; margin:0 2px;">[ZWNJ]</span>`;
                     binaryStream += '1';
-                } else if (code === 0x200D) {
+                } else if (code === 0x200D) { // ZWJ
                     html += `<span style="background:var(--cyan-primary); color:white; padding:1px 6px; border-radius:4px; font-size:10px; font-weight:bold; margin:0 2px;">[ZWJ]</span>`;
                     binaryStream += '11';
-                } else if (code === 0xFEFF) {
+                } else if (code === 0xFEFF) { // ZWNBSP / BOM
                     html += `<span style="background:var(--warning); color:white; padding:1px 6px; border-radius:4px; font-size:10px; font-weight:bold; margin:0 2px;">[BOM]</span>`;
                 } else {
                     html += char === '\n' ? '<br>' : char;
@@ -1071,19 +1132,25 @@
                 return;
             }
 
+            // Skeleton Placeholder
             resultCard.innerHTML = `
-                <div style="padding:24px;" class="scanning-radar">
+                <div style="padding:24px;">
                     <div style="height:24px; background:#e2e8f0; border-radius:6px; margin-bottom:16px; width:40%;"></div>
                     <div style="height:120px; background:#f1f5f9; border-radius:12px; margin-bottom:16px;"></div>
                     <div style="height:80px; background:#f1f5f9; border-radius:12px;"></div>
                 </div>
             `;
 
-            const backendRes = await fetchAPI('/api/v1/admin/trace-leak');
+            // Call Backend API or fall back to high-fidelity mock
+            const backendRes = await fetchAPI('/api/v1/admin/trace-leak', {
+                method: 'POST',
+                body: JSON.stringify({ leak_text: inputVal })
+            });
 
             const data = backendRes || {
                 verdict: 'LEAK ATTRIBUTED',
                 confidence: '98.4%',
+                method: 'Layer 1: ZWSP Unicode + Layer 2: Lexical Synonym Overlap',
                 candidate: {
                     name: 'Aarav Sharma',
                     uuid: '550e8400-e29b-41d4-a716-446655440001',
@@ -1091,12 +1158,18 @@
                     desk_ip: '10.0.1.14 (LAB-1 / SEAT-01)',
                     session_time: '29 Aug 2026 03:01:22 AM'
                 },
+                differential: {
+                    base: 'Explain the principles of kinetic friction and calculate amplitude.',
+                    candidate_variant: 'Clarify the principles of kinetic friction and determine amplitude.',
+                    pasted_snippet: inputVal
+                },
                 margin_victory: 'Runner-up Priya Patel (12.1% match). Margin of victory: +86.3%'
             };
 
             lastTraceResult = data;
 
             resultCard.innerHTML = `
+                <!-- Verdict Banner -->
                 <div style="padding:16px 20px; background:var(--danger-bg); border:1px solid #fecaca; border-radius:16px; display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
                     <div style="display:flex; align-items:center; gap:10px;">
                         <span class="badge red">LEAK ATTRIBUTED</span>
@@ -1105,6 +1178,7 @@
                     <span class="mono" style="font-size:12px; font-weight:800; color:#dc2626;">98.4% Confidence</span>
                 </div>
 
+                <!-- Suspect Identity Card -->
                 <div style="background:#ffffff; border:1px solid var(--border-color); border-radius:16px; padding:20px; margin-bottom:16px; box-shadow:var(--shadow-card);">
                     <div style="font-size:11px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;">SUSPECTED CANDIDATE IDENTITY</div>
                     <h3 style="font-size:18px; font-weight:800; color:var(--text-main); margin-bottom:4px;">${data.candidate.name}</h3>
@@ -1117,8 +1191,9 @@
                     </div>
                 </div>
 
+                <!-- Forensic Detection Layer Badge -->
                 <div style="padding:14px; background:#f8fafc; border:1px solid var(--border-color); border-radius:12px; font-size:12px; margin-bottom:16px;">
-                    <span style="font-weight:800; color:var(--text-muted); display:block; margin-bottom:6px; text-transform:uppercase; font-size:10px;">DETECTION METHOD BADGES</span>
+                    <span style="font-weight:800; color:var(--text-muted); display:block; margin-bottom:4px; text-transform:uppercase; font-size:10px;">DETECTION METHOD BADGES</span>
                     <div style="display:flex; gap:6px; flex-wrap:wrap;">
                         <span class="badge purple">Layer 1: ZWSP Unicode</span>
                         <span class="badge cyan">Layer 2: Lexical Synonym</span>
@@ -1126,11 +1201,30 @@
                     </div>
                 </div>
 
+                <!-- Evidence Differential Breakdown Matrix -->
+                <div style="padding:16px; background:#ffffff; border:1px solid var(--border-color); border-radius:14px; margin-bottom:16px; font-size:12px;">
+                    <div style="font-weight:800; color:var(--text-main); margin-bottom:8px;">Evidence Differential Matrix</div>
+                    <div style="display:flex; flex-direction:column; gap:8px;">
+                        <div style="padding:8px; background:#f1f5f9; border-radius:8px;"><strong>Base Item:</strong> Explain principles...</div>
+                        <div style="padding:8px; background:#f3e8ff; border-radius:8px; color:var(--purple-primary);"><strong>Candidate Variant:</strong> <mark style="background:#ddd6fe;">Clarify</mark> principles... <mark style="background:#ddd6fe;">determine</mark> amplitude.</div>
+                    </div>
+                    <div style="font-size:11px; color:var(--text-muted); margin-top:8px;" class="mono">${data.margin_victory}</div>
+                </div>
+
+                <!-- Action Buttons -->
                 <div style="display:flex; gap:10px;">
-                    <button class="btn-primary" style="background:var(--danger); flex:1;" onclick="alert('Candidate Flagged')">Flag Candidate 🚩</button>
-                    <button class="btn-primary" style="background:var(--warning); flex:1;" onclick="alert('Session Invalidated')">Invalidate Session 🔒</button>
+                    <button class="btn-primary" style="background:var(--danger); flex:1;" onclick="flagSuspectCandidate('${data.candidate.uuid}')">Flag Candidate 🚩</button>
+                    <button class="btn-primary" style="background:var(--warning); flex:1;" onclick="invalidateActiveSession('${data.candidate.uuid}')">Invalidate Session 🔒</button>
                 </div>
             `;
+        }
+
+        function flagSuspectCandidate(uuid) {
+            alert(`Candidate ${uuid} flagged for security review.`);
+        }
+
+        function invalidateActiveSession(uuid) {
+            alert(`Active session for candidate ${uuid} invalidated.`);
         }
 
         function exportForensicReport(format) {
