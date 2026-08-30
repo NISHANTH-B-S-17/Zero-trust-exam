@@ -21,6 +21,24 @@
     {
       "source": "/dashboard/(.*)",
       "destination": "/admin/dashboard.html"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/index.py"
+    },
+    {
+      "source": "/",
+      "destination": "/admin/dashboard.html"
+    },
+    {
+      "source": "/dashboard",
+      "destination": "/admin/dashboard.html"
+    },
+    {
+      "source": "/dashboard/(.*)",
+      "destination": "/admin/dashboard.html"
   "builds": [
     {
       "src": "backend/app/main.py",
