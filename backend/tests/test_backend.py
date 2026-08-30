@@ -10,7 +10,47 @@ from app.main import app
 from app.security import crypto, t5
 from app.forensic import watermark, tracer
 from app.psychometrics import fairness, irt
-from app.services import telemetry, audit
+from app.services import telemetry, audit, staff
+
+# --- Staff Security Tests ---
+
+def test_staff_security_endpoint(test_client):
+    from app.core.config import settings
+    headers = {"x-admin-token": settings.ADMIN_TOKEN}
+    response = test_client.get("/api/v1/admin/staff-security", headers=headers)
+    assert response.status_code == 200
+    
+    data = response.json()
+    assert "roles_overview" in data
+    assert "reviewer_assignments" in data
+    assert "risk_alerts" in data
+    assert "blocked_actions" in data
+    assert "staff_audit_trail" in data
+    assert "policy_status" in data
+    
+    # Check that forbidden overclaim words are not in the response payload anywhere
+    dump = str(data).lower()
+    forbidden_words = ["confirmed guilty", "proves guilt", "100% secure", "zero leaks"]
+    for word in forbidden_words:
+        assert word not in dump
+
+def test_calculate_risk_level():
+    assert staff.calculate_risk_level(20) == "LOW"
+    assert staff.calculate_risk_level(45) == "MEDIUM"
+    assert staff.calculate_risk_level(75) == "HIGH"
+    assert staff.calculate_risk_level(95) == "CRITICAL"
+
+def test_staff_view_permissions():
+    # 4. Reviewer cannot view unassigned question
+    assert staff.can_view_question("REVIEWER", 2, 99, assigned_question_ids=[1, 2]) is False
+    assert staff.can_view_question("REVIEWER", 2, 1, assigned_question_ids=[1, 2]) is True
+    
+    # 5. Creator cannot view unrelated question (mocked to false currently)
+    assert staff.can_view_question("QUESTION_CREATOR", 1, 99) is False
+    
+    # 6. Security admin cannot automatically decrypt/read raw question content
+    assert staff.can_view_question("SECURITY_ADMIN", 4, 1) is False
+
 
 # Start client with lifespan context to initialize DB
 @pytest.fixture
