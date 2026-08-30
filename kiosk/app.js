@@ -1,5 +1,8 @@
-// Constants
-const API_BASE = 'http://127.0.0.1:8080/api/v1/student';
+// Dynamic Host & API Resolution
+const currentOrigin = window.location.origin;
+const isFileProtocol = currentOrigin.startsWith('file:');
+const isLocal = currentOrigin.includes('127.0.0.1') || currentOrigin.includes('localhost');
+const API_BASE = isLocal ? 'http://127.0.0.1:8080/api/v1/student' : (isFileProtocol ? 'http://127.0.0.1:8080/api/v1/student' : `${currentOrigin}/api/v1/student`);
 const STORAGE_KEY = 'ZERO_TRUST_EXAM_SESSION_V8';
 
 // Unified State Architecture
@@ -263,10 +266,19 @@ async function fetchPaper() {
         if (!res.ok) throw new Error('Examination paper unavailable for this student session.');
         
         const data = await res.json();
+        let qList = [];
+        if (Array.isArray(data.paper)) {
+            qList = data.paper;
+        } else if (data.paper && Array.isArray(data.paper.questions)) {
+            qList = data.paper.questions;
+        } else if (Array.isArray(data.questions)) {
+            qList = data.questions;
+        }
+
         state.paper = {
-            questions: data.paper || []
+            questions: qList
         };
-        state.remainingSeconds = data.duration_seconds || 3600;
+        state.remainingSeconds = data.duration_seconds || (data.paper && data.paper.duration_seconds) || 3600;
         
         if (!state.paper.questions || state.paper.questions.length === 0) {
             throw new Error('No examination questions returned from paper generator.');
@@ -356,7 +368,7 @@ class QuestionRenderer {
             if (q.type === 'true_false') {
                 isSelected = String(currentAnswer) === String(opt);
             } else {
-                isSelected = String(currentAnswer) === String(idx);
+                isSelected = String(currentAnswer) === String(idx) || String(currentAnswer) === String(opt);
             }
 
             if (isSelected) card.classList.add('selected');
