@@ -52,7 +52,8 @@ def decrypt_payload(envelope: bytes, master_key: bytes) -> bytes:
     except InvalidTag:
         raise ValueError("Invalid payload: wrong key or tampered ciphertext")
 
-def secure_wipe(key_bytes: bytearray) -> None:
-    if isinstance(key_bytes, bytearray):
-        for i in range(len(key_bytes)):
-            key_bytes[i] = 0
+def secure_wipe(buffer: bytearray) -> None:
+    """Best-effort in-place zeroing of mutable bytearray buffer."""
+    if isinstance(buffer, bytearray):
+        for i in range(len(buffer)):
+            buffer[i] = 0
