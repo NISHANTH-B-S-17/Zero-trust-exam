@@ -1,10 +1,7 @@
 // Constants & Environment Configuration
 const isLocalHost = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost';
-// Default to Vercel production API, falling back to local port 8080 if on localhost
-const DEFAULT_PROD_API = 'https://zero-trust-exam.vercel.app/api/v1/student';
-const API_BASE = (typeof process !== 'undefined' && process.env && process.env.KIOSK_API_BASE) 
-    ? process.env.KIOSK_API_BASE 
-    : (isLocalHost ? 'http://127.0.0.1:8080/api/v1/student' : '/api/v1/student');
+const KIOSK_ENV_API = (typeof process !== 'undefined' && process.env && process.env.KIOSK_API_BASE) ? process.env.KIOSK_API_BASE : null;
+const API_BASE = KIOSK_ENV_API || (isLocalHost ? 'http://127.0.0.1:8080/api/v1/student' : '/api/v1/student');
 const STORAGE_KEY = 'ZERO_TRUST_EXAM_SESSION_V6';
 
 // State Architecture
