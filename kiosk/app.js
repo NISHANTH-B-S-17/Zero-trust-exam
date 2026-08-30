@@ -1,7 +1,9 @@
-// Constants & Environment Configuration
-const isLocalHost = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost';
+// Dynamic Host & API Resolution
+const currentOrigin = window.location.origin;
+const isFileProtocol = currentOrigin.startsWith('file:');
+const isLocal = currentOrigin.includes('127.0.0.1') || currentOrigin.includes('localhost');
 const KIOSK_ENV_API = (typeof process !== 'undefined' && process.env && process.env.KIOSK_API_BASE) ? process.env.KIOSK_API_BASE : null;
-const API_BASE = KIOSK_ENV_API || (isLocalHost ? 'http://127.0.0.1:8080/api/v1/student' : '/api/v1/student');
+const API_BASE = KIOSK_ENV_API || (isLocal ? 'http://127.0.0.1:8080/api/v1/student' : (isFileProtocol ? 'http://127.0.0.1:8080/api/v1/student' : `${currentOrigin}/api/v1/student`));
 const STORAGE_KEY = 'ZERO_TRUST_EXAM_SESSION_V8';
 
 // Unified State Architecture
@@ -39,24 +41,12 @@ function initApp() {
         window.electronAPI.onSecurityEvent(handleSecurityEvent);
     }
 
+    // Always ensure Login / Verification view is visible first on startup
+    showLoginView();
+
     // Auto-focus Student UUID field
     const uuidInput = document.getElementById('uuid');
     if (uuidInput) setTimeout(() => uuidInput.focus(), 200);
-
-    // Restore existing session if present
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-        try {
-            const parsed = JSON.parse(saved);
-            if (parsed.uuid && parsed.paper) {
-                state = parsed;
-                resumeExam();
-                return;
-            }
-        } catch (e) {
-            console.error("Failed to parse saved session state", e);
-        }
-    }
 
     // Login Form Listener
     const loginForm = document.getElementById('login-form');
@@ -265,11 +255,19 @@ async function fetchPaper() {
         if (!res.ok) throw new Error('Examination paper unavailable for this student session.');
 
         const data = await res.json();
-        state.paper = {
-            questions: data.paper || []
-        };
-        state.remainingSeconds = data.duration_seconds || 3600;
+        let qList = [];
+        if (Array.isArray(data.paper)) {
+            qList = data.paper;
+        } else if (data.paper && Array.isArray(data.paper.questions)) {
+            qList = data.paper.questions;
+        } else if (Array.isArray(data.questions)) {
+            qList = data.questions;
+        }
 
+        state.paper = {
+            questions: qList
+        };
+        state.remainingSeconds = data.duration_seconds || (data.paper && data.paper.duration_seconds) || 3600;
         if (!state.paper.questions || state.paper.questions.length === 0) {
             throw new Error('No examination questions returned from paper generator.');
         }
@@ -283,6 +281,17 @@ async function fetchPaper() {
 }
 
 // --- Live Exam Terminal Transition ---
+
+function showLoginView() {
+    if (views.login) {
+        views.login.classList.remove('hidden');
+        views.login.classList.add('active');
+    }
+    if (views.exam) {
+        views.exam.classList.remove('active');
+        views.exam.classList.add('hidden');
+    }
+}
 
 function startExam() {
     views.login.classList.remove('active');
@@ -358,7 +367,7 @@ class QuestionRenderer {
             if (q.type === 'true_false') {
                 isSelected = String(currentAnswer) === String(opt);
             } else {
-                isSelected = String(currentAnswer) === String(idx);
+                isSelected = String(currentAnswer) === String(idx) || String(currentAnswer) === String(opt);
             }
 
             if (isSelected) card.classList.add('selected');
