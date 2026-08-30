@@ -21,6 +21,14 @@
     {
       "source": "/dashboard/(.*)",
       "destination": "/admin/dashboard.html"
+    },
+    {
+      "source": "/kiosk",
+      "destination": "/kiosk/index.html"
+    },
+    {
+      "source": "/kiosk/(.*)",
+      "destination": "/kiosk/index.html"
     }
   ]
 }
