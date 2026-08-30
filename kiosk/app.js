@@ -2,7 +2,8 @@
 const currentOrigin = window.location.origin;
 const isFileProtocol = currentOrigin.startsWith('file:');
 const isLocal = currentOrigin.includes('127.0.0.1') || currentOrigin.includes('localhost');
-const API_BASE = isLocal ? 'http://127.0.0.1:8080/api/v1/student' : (isFileProtocol ? 'http://127.0.0.1:8080/api/v1/student' : `${currentOrigin}/api/v1/student`);
+const KIOSK_ENV_API = (typeof process !== 'undefined' && process.env && process.env.KIOSK_API_BASE) ? process.env.KIOSK_API_BASE : null;
+const API_BASE = KIOSK_ENV_API || (isLocal ? 'http://127.0.0.1:8080/api/v1/student' : (isFileProtocol ? 'http://127.0.0.1:8080/api/v1/student' : `${currentOrigin}/api/v1/student`));
 const STORAGE_KEY = 'ZERO_TRUST_EXAM_SESSION_V8';
 
 // Unified State Architecture
@@ -50,7 +51,7 @@ function initApp() {
     // Login Form Listener
     const loginForm = document.getElementById('login-form');
     if (loginForm) loginForm.addEventListener('submit', handleLogin);
-    
+
     // Exam Controls Initialization
     const btnNext = document.getElementById('btn-next');
     if (btnNext) {
@@ -81,7 +82,7 @@ function initApp() {
 
     const btnHeaderSubmit = document.getElementById('header-submit-btn');
     if (btnHeaderSubmit) btnHeaderSubmit.addEventListener('click', confirmSubmit);
-    
+
     const btnCancelSubmit = document.getElementById('btn-cancel-submit');
     if (btnCancelSubmit) {
         btnCancelSubmit.addEventListener('click', () => {
@@ -106,7 +107,7 @@ function initApp() {
             else location.reload();
         });
     }
-    
+
     // Clipboard & Right-click protection
     document.addEventListener('copy', (e) => { e.preventDefault(); handleSecurityEvent('clipboard_attempt_copy'); });
     document.addEventListener('cut', (e) => { e.preventDefault(); handleSecurityEvent('clipboard_attempt_cut'); });
@@ -120,7 +121,7 @@ function initApp() {
 // Automated Keyboard Shortcuts
 function handleAutomatedKeybinds(e) {
     if (!views.exam || !views.exam.classList.contains('active')) return;
-    
+
     const activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
     if (activeTag === 'input' || activeTag === 'textarea') return;
 
@@ -187,37 +188,37 @@ async function handleLogin(e) {
     e.preventDefault();
     const btn = document.getElementById('start-verification-btn');
     const errBox = document.getElementById('login-error');
-    
+
     if (btn) { btn.disabled = true; btn.innerHTML = `<span>Verifying...</span>`; }
     if (errBox) errBox.classList.add('hidden');
-    
+
     const uuidInput = document.getElementById('uuid').value.trim();
-    
+
     if (!uuidInput) {
         showLoginError("Verification failed. Please enter Student UUID.");
         resetLoginBtn();
         return;
     }
-    
+
     try {
         const res = await fetch(`${API_BASE}/authenticate`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ identifier: uuidInput })
         });
-        
+
         if (res.status === 401) {
             throw new Error('Student UUID verification failed. Student record not found.');
         } else if (!res.ok) {
             throw new Error('Authentication node error. Please try again.');
         }
-        
+
         const data = await res.json();
         const studentInfo = data.student || {};
-        
+
         state.uuid = studentInfo.uuid || uuidInput;
         state.token = data.token || 'dummy-token';
-        
+
         await fetchPaper();
     } catch (err) {
         console.error(err);
@@ -245,14 +246,14 @@ async function fetchPaper() {
     try {
         const res = await fetch(`${API_BASE}/fetch-paper?student_uuid=${encodeURIComponent(state.uuid)}`, {
             method: 'GET',
-            headers: { 
+            headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${state.token}`
             }
         });
-        
+
         if (!res.ok) throw new Error('Examination paper unavailable for this student session.');
-        
+
         const data = await res.json();
         let qList = [];
         if (Array.isArray(data.paper)) {
@@ -267,7 +268,6 @@ async function fetchPaper() {
             questions: qList
         };
         state.remainingSeconds = data.duration_seconds || (data.paper && data.paper.duration_seconds) || 3600;
-        
         if (!state.paper.questions || state.paper.questions.length === 0) {
             throw new Error('No examination questions returned from paper generator.');
         }
@@ -298,9 +298,9 @@ function startExam() {
     views.login.classList.add('hidden');
     views.exam.classList.remove('hidden');
     views.exam.classList.add('active');
-    
+
     document.getElementById('header-uuid').textContent = state.uuid;
-    
+
     setTimeout(() => {
         const wmText = `${state.uuid} - ${new Date().toISOString().split('T')[0]}`;
         const overlay = document.getElementById('watermark-overlay');
@@ -362,7 +362,7 @@ class QuestionRenderer {
         opts.forEach((opt, idx) => {
             const card = document.createElement('div');
             card.className = 'option-card-row';
-            
+
             let isSelected = false;
             if (q.type === 'true_false') {
                 isSelected = String(currentAnswer) === String(opt);
@@ -409,7 +409,7 @@ class QuestionRenderer {
         opts.forEach((opt, idx) => {
             const card = document.createElement('div');
             card.className = 'option-card-row';
-            
+
             const val = String(idx);
             const isSelected = currentAnsArr.includes(val);
             if (isSelected) card.classList.add('selected');
@@ -529,35 +529,38 @@ function renderQuestion() {
     const q = state.paper.questions[state.currentIndex];
     const total = state.paper.questions.length;
     state.visited[q.id] = true;
-    
+
     updateProgressUI(total);
 
     // Question Counter & Badges
     document.getElementById('q-counter').textContent = `QUESTION ${state.currentIndex + 1} OF ${total}`;
-    
+
     const metadataStr = q.metadata || '';
     const parts = metadataStr.split('|');
     document.getElementById('q-subject').textContent = q.subject || parts[0] || 'Physics';
     document.getElementById('q-topic').textContent = q.topic || parts[1] || 'Dynamics';
     document.getElementById('q-difficulty').textContent = q.difficulty ? `Diff: ${q.difficulty}` : (parts[2] || 'Medium');
-    
+
     document.getElementById('q-text').textContent = q.text || 'Question content missing.';
-    
+
     // Render Answer Options
     const ansArea = document.getElementById('answer-area');
-    const currentAns = state.responses[q.id];
+    const currentAns = getAnswerForQuestion(q.id);
 
     QuestionRenderer.render(q, ansArea, currentAns, (newAnswer) => {
         if (newAnswer !== null && newAnswer !== undefined) {
             state.responses[q.id] = newAnswer;
+            state.responses[String(q.id)] = newAnswer;
         } else {
             delete state.responses[q.id];
+            delete state.responses[String(q.id)];
         }
         updateQuestionUI();
         updatePalette();
         saveState();
+        syncWithBackend();
     });
-    
+
     updateQuestionUI();
     updatePalette();
 }
@@ -566,7 +569,7 @@ function updateProgressUI(total) {
     const answeredCount = calculateAnsweredCount();
     document.getElementById('answered-count').textContent = answeredCount;
     document.getElementById('total-count').textContent = total;
-    
+
     const progressPercent = total > 0 ? Math.round((answeredCount / total) * 100) : 0;
     document.getElementById('progress-circle').setAttribute('stroke-dasharray', `${progressPercent}, 100`);
     document.getElementById('progress-text').textContent = `${progressPercent}%`;
@@ -615,7 +618,7 @@ function updateQuestionUI() {
     // Navigation Buttons
     const prevBtn = document.getElementById('btn-prev');
     if (prevBtn) prevBtn.disabled = state.currentIndex === 0;
-    
+
     const nextBtn = document.getElementById('btn-next');
     if (nextBtn) {
         if (state.currentIndex === total - 1) {
@@ -626,8 +629,14 @@ function updateQuestionUI() {
     }
 }
 
+function getAnswerForQuestion(qId) {
+    if (state.responses[qId] !== undefined) return state.responses[qId];
+    if (state.responses[String(qId)] !== undefined) return state.responses[String(qId)];
+    return undefined;
+}
+
 function hasAnswer(qId) {
-    const ans = state.responses[qId];
+    const ans = getAnswerForQuestion(qId);
     if (ans === undefined || ans === null) return false;
     if (typeof ans === 'string') return ans.trim() !== '';
     if (Array.isArray(ans)) return ans.length > 0;
@@ -645,6 +654,7 @@ function navigate(dir) {
         state.currentIndex = newIdx;
         renderQuestion();
         saveState();
+        syncWithBackend();
     }
 }
 
@@ -660,8 +670,10 @@ function toggleFlag() {
 function clearAnswer() {
     const qId = state.paper.questions[state.currentIndex].id;
     delete state.responses[qId];
+    delete state.responses[String(qId)];
     renderQuestion();
     saveState();
+    syncWithBackend();
     showToast('Response Cleared', 'info');
 }
 
@@ -671,20 +683,20 @@ function buildPalette() {
     const grid = document.getElementById('question-palette');
     if (!grid) return;
     grid.innerHTML = '';
-    
+
     state.paper.questions.forEach((q, idx) => {
         const node = document.createElement('div');
         node.className = 'pal-node';
         node.id = `pal-${q.id}`;
         node.textContent = idx + 1;
-        
+
         node.addEventListener('click', () => {
             saveState();
             state.currentIndex = idx;
             renderQuestion();
             saveState();
         });
-        
+
         grid.appendChild(node);
     });
     updatePalette();
@@ -696,14 +708,14 @@ function updatePalette() {
     state.paper.questions.forEach((q, idx) => {
         const node = document.getElementById(`pal-${q.id}`);
         if (!node) return;
-        
+
         node.className = 'pal-node';
         node.innerHTML = `${idx + 1}`;
-        
+
         if (idx === state.currentIndex) node.classList.add('current');
-        
+
         const ans = hasAnswer(q.id);
-        
+
         if (state.flags[q.id]) {
             node.classList.add('review');
             const flagBadge = document.createElement('div');
@@ -711,7 +723,7 @@ function updatePalette() {
             flagBadge.innerHTML = `<svg viewBox="0 0 24 24" fill="#f59e0b"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/></svg>`;
             node.appendChild(flagBadge);
         }
-        
+
         if (ans) {
             node.classList.add('answered');
         } else if (state.visited[q.id]) {
@@ -725,13 +737,13 @@ function updatePalette() {
 function startTimer() {
     if (timerInterval) clearInterval(timerInterval);
     updateTimerDisplay();
-    
+
     timerInterval = setInterval(() => {
         state.remainingSeconds--;
         updateTimerDisplay();
-        
+
         if (state.remainingSeconds % 30 === 0) saveState();
-        
+
         if (state.remainingSeconds <= 0) {
             clearInterval(timerInterval);
             finalSubmit(true);
@@ -744,7 +756,7 @@ function updateTimerDisplay() {
     const h = Math.floor(state.remainingSeconds / 3600);
     const m = Math.floor((state.remainingSeconds % 3600) / 60);
     const s = state.remainingSeconds % 60;
-    
+
     const timerElem = document.getElementById('live-timer');
     if (timerElem) {
         timerElem.textContent = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
@@ -786,16 +798,16 @@ async function syncWithBackend() {
             flags: state.flags,
             security_events: securityEventsQueue
         };
-        
+
         const res = await fetch(`${API_BASE}/heartbeat`, {
             method: 'POST',
-            headers: { 
+            headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${state.token}`
             },
             body: JSON.stringify(payload)
         });
-        
+
         if (res.ok) {
             securityEventsQueue = [];
             updateConnectionStatus(true);
@@ -810,7 +822,7 @@ async function syncWithBackend() {
 function updateConnectionStatus(isConnected) {
     const banner = document.getElementById('connection-banner');
     const nodeStatus = document.getElementById('status-node');
-    
+
     if (isConnected) {
         if (banner) banner.classList.add('hidden');
         if (nodeStatus) {
@@ -836,13 +848,13 @@ function handleSecurityEvent(eventType) {
         timestamp: new Date().toISOString()
     };
     securityEventsQueue.push(event);
-    
+
     navigator.clipboard.writeText('').catch(() => {});
-    
+
     if (state.uuid) {
         fetch(`${API_BASE}/log-security-event`, {
             method: 'POST',
-            headers: { 
+            headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${state.token}`
             },
@@ -857,7 +869,7 @@ function confirmSubmit() {
     const answered = calculateAnsweredCount();
     const total = state.paper ? state.paper.questions.length : 0;
     const review = Object.keys(state.flags).filter(k => state.flags[k]).length;
-    
+
     const ansElem = document.getElementById('confirm-answered');
     const unansElem = document.getElementById('confirm-unanswered');
     const revElem = document.getElementById('confirm-review');
@@ -865,7 +877,7 @@ function confirmSubmit() {
     if (ansElem) ansElem.textContent = answered;
     if (unansElem) unansElem.textContent = total - answered;
     if (revElem) revElem.textContent = review;
-    
+
     const modal = document.getElementById('submit-confirm-modal');
     if (modal) modal.classList.remove('hidden');
 }
@@ -876,10 +888,10 @@ async function finalSubmit(isAuto = false) {
 
     clearInterval(timerInterval);
     clearInterval(heartbeatInterval);
-    
+
     saveState();
     handleSecurityEvent(isAuto ? 'exam_auto_submit' : 'exam_submit');
-    
+
     try {
         const payload = {
             student_uuid: state.uuid,
@@ -887,23 +899,23 @@ async function finalSubmit(isAuto = false) {
             remaining_seconds: state.remainingSeconds,
             auto_submit: isAuto
         };
-        
+
         const res = await fetch(`${API_BASE}/submit`, {
             method: 'POST',
-            headers: { 
+            headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${state.token}`
             },
             body: JSON.stringify(payload)
         });
-        
+
         let data = {};
         if (res.ok) {
             data = await res.json();
         } else {
             data = { receipt_hash: 'LOCAL-' + Math.random().toString(36).substring(2, 15) };
         }
-        
+
         showReceipt(data);
     } catch (err) {
         console.error(err);
@@ -913,20 +925,20 @@ async function finalSubmit(isAuto = false) {
 
 function showReceipt(data) {
     localStorage.removeItem(STORAGE_KEY);
-    
+
     const hashElem = document.getElementById('receipt-hash');
     const timeElem = document.getElementById('receipt-time');
 
     if (hashElem) hashElem.textContent = data.receipt_hash || 'N/A';
     if (timeElem) timeElem.textContent = new Date().toLocaleString();
-    
+
     if (data.score !== undefined) {
         const scoreRow = document.getElementById('score-row');
         const scoreVal = document.getElementById('receipt-score');
         if (scoreRow) scoreRow.classList.remove('hidden');
         if (scoreVal) scoreVal.textContent = `${data.score}%`;
     }
-    
+
     const modal = document.getElementById('receipt-modal');
     if (modal) modal.classList.remove('hidden');
 }
