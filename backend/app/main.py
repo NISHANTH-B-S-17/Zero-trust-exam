@@ -24,7 +24,6 @@ app.add_middleware(
 )
 
 app.include_router(health.router, prefix=settings.API_V1_STR)
-app.include_router(health.router, prefix=f"{settings.API_V1_STR}/health")
 app.include_router(health.router, prefix="/health")
 app.include_router(admin.router, prefix=f"{settings.API_V1_STR}/admin")
 app.include_router(student.router, prefix=f"{settings.API_V1_STR}/student")

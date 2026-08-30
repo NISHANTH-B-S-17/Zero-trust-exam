@@ -1,9 +1,9 @@
 // Dynamic Host & API Resolution
 const currentOrigin = window.location.origin;
-const isFileProtocol = currentOrigin.startsWith('file:');
-const isLocal = currentOrigin.includes('127.0.0.1') || currentOrigin.includes('localhost');
+const isFileProtocol = !currentOrigin || currentOrigin.startsWith('file:') || currentOrigin === 'null';
+const isLocal = currentOrigin.includes('127.0.0.1') || currentOrigin.includes('localhost') || currentOrigin.includes('5500') || currentOrigin.includes('3000') || currentOrigin.includes('8080');
 const KIOSK_ENV_API = (typeof process !== 'undefined' && process.env && process.env.KIOSK_API_BASE) ? process.env.KIOSK_API_BASE : null;
-const API_BASE = KIOSK_ENV_API || (isLocal ? 'http://127.0.0.1:8080/api/v1/student' : (isFileProtocol ? 'http://127.0.0.1:8080/api/v1/student' : `${currentOrigin}/api/v1/student`));
+const API_BASE = KIOSK_ENV_API || ((isLocal || isFileProtocol) ? 'http://127.0.0.1:8080/api/v1/student' : `${currentOrigin}/api/v1/student`);
 const STORAGE_KEY = 'ZERO_TRUST_EXAM_SESSION_V8';
 
 // Unified State Architecture
@@ -35,7 +35,27 @@ document.addEventListener('DOMContentLoaded', () => {
     initApp();
 });
 
+function checkInitialBackendHealth() {
+    const banner = document.getElementById('connection-banner');
+    fetch(`${API_BASE.replace('/api/v1/student', '')}/api/v1/health`)
+        .then(res => {
+            if (res.ok) {
+                if (banner) banner.classList.add('hidden');
+            } else {
+                showLoginError('Backend service responding with error. Please contact administrator.');
+            }
+        })
+        .catch(() => {
+            if (banner) {
+                banner.textContent = '⚠️ Backend service not reachable on 127.0.0.1:8080. Please start the backend.';
+                banner.classList.remove('hidden');
+            }
+        });
+}
+
 function initApp() {
+    checkInitialBackendHealth();
+
     if (window.electronAPI) {
         window.electronAPI.reportRendererReady();
         window.electronAPI.onSecurityEvent(handleSecurityEvent);
@@ -222,7 +242,10 @@ async function handleLogin(e) {
         await fetchPaper();
     } catch (err) {
         console.error(err);
-        showLoginError(err.message || "Verification failed. Check Student UUID.");
+        const msg = (err.name === 'TypeError' && err.message.includes('fetch')) 
+            ? 'Unable to connect to examination backend (http://127.0.0.1:8080). Please ensure the backend service is running.'
+            : (err.message || "Verification failed. Check Student UUID.");
+        showLoginError(msg);
         resetLoginBtn();
     }
 }
@@ -367,7 +390,7 @@ class QuestionRenderer {
             if (q.type === 'true_false') {
                 isSelected = String(currentAnswer) === String(opt);
             } else {
-                isSelected = String(currentAnswer) === String(idx) || String(currentAnswer) === String(opt);
+                isSelected = String(currentAnswer) === String(idx);
             }
 
             if (isSelected) card.classList.add('selected');
@@ -393,7 +416,6 @@ class QuestionRenderer {
             card.addEventListener('click', () => {
                 const val = (q.type === 'true_false' ? String(opt) : String(idx));
                 onAnswerChange(val);
-                renderQuestion();
                 showToast(`Option ${letters[idx % letters.length]} Saved`, 'success');
             });
 
@@ -440,7 +462,6 @@ class QuestionRenderer {
                     newArr.push(val);
                 }
                 onAnswerChange(newArr.length > 0 ? newArr : null);
-                renderQuestion();
             });
 
             container.appendChild(card);
@@ -937,6 +958,16 @@ function showReceipt(data) {
         const scoreVal = document.getElementById('receipt-score');
         if (scoreRow) scoreRow.classList.remove('hidden');
         if (scoreVal) scoreVal.textContent = `${data.score}%`;
+    }
+    const exitBtn = document.getElementById('exit-btn');
+    if (exitBtn) {
+        exitBtn.addEventListener('click', () => {
+            if (window.electronAPI && window.electronAPI.exitTerminal) {
+                window.electronAPI.exitTerminal();
+            } else {
+                window.close();
+            }
+        });
     }
 
     const modal = document.getElementById('receipt-modal');

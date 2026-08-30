@@ -5,8 +5,14 @@ class Settings:
     PROJECT_NAME: str = "Nivasha Security Engine"
     API_V1_STR: str = "/api/v1"
     
-    # In-memory ephemeral encryption key for SQLite TDE
-    SQLITE_TDE_KEY: bytes = os.urandom(32)
+    @property
+    def SQLITE_TDE_KEY(self) -> bytes:
+        env_key = os.environ.get("SQLITE_TDE_KEY") or os.environ.get("TDE_KEY")
+        if env_key:
+            return env_key.encode("utf-8")[:32].zfill(32)
+        if not hasattr(self, "_default_tde_key"):
+            self._default_tde_key = os.urandom(32)
+        return self._default_tde_key
     
     # Use /tmp for serverless (Vercel) writable environment if needed
     _base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))

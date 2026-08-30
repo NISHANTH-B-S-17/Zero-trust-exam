@@ -17,6 +17,31 @@ class StaffUserResponse(BaseModel):
     risk_score: int
     last_seen: int
 
+class StaffCreateRequest(BaseModel):
+    name: str
+    role: str
+    status: Optional[str] = "active"
+
+class StaffUpdateRequest(BaseModel):
+    name: Optional[str] = None
+    role: Optional[str] = None
+    status: Optional[str] = None
+
+class QuestionCreateRequest(BaseModel):
+    subject: str
+    topic: str
+    irt_difficulty: float = 0.5
+    question_type: str = "MCQ"
+    marks: int = 2
+    estimated_time_seconds: int = 90
+    question_text: str
+    options: List[str] = []
+    correct_answer: str
+
+class QuestionReviewRequest(BaseModel):
+    status: str # "approved" or "rejected"
+    comments: Optional[str] = None
+
 class ReviewerAssignmentResponse(BaseModel):
     id: int
     reviewer_id: int

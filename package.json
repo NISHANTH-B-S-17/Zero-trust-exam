@@ -1,0 +1,12 @@
+{
+  "name": "zero-trust-exam-engine",
+  "version": "2.0.0",
+  "description": "Nivasha Zero-Trust Air-Gapped Examination Engine Root Runner",
+  "scripts": {
+    "start": "npm run start:all",
+    "backend": "cd backend && python -m uvicorn app.main:app --host 127.0.0.1 --port 8080 --reload",
+    "admin": "cd admin && npm start",
+    "kiosk": "cd kiosk && npm start",
+    "start:all": "cd kiosk && npm start"
+  }
+}
