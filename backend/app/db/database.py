@@ -175,7 +175,13 @@ async def seed_demo_data():
 
         await db.commit()
 
+async def ensure_db_initialized():
+    if not os.path.exists(settings.DB_PATH):
+        await init_db()
+        await seed_demo_data()
+
 async def fetch_all_questions() -> list:
+    await ensure_db_initialized()
     async with aiosqlite.connect(settings.DB_PATH) as db:
         db.row_factory = aiosqlite.Row
         cursor = await db.execute('SELECT * FROM Question_Vault')
