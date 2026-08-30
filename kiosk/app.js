@@ -37,24 +37,12 @@ function initApp() {
         window.electronAPI.onSecurityEvent(handleSecurityEvent);
     }
 
+    // Always ensure Login / Verification view is visible first on startup
+    showLoginView();
+
     // Auto-focus Student UUID field
     const uuidInput = document.getElementById('uuid');
     if (uuidInput) setTimeout(() => uuidInput.focus(), 200);
-
-    // Restore existing session if present
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-        try {
-            const parsed = JSON.parse(saved);
-            if (parsed.uuid && parsed.paper) {
-                state = parsed;
-                resumeExam();
-                return;
-            }
-        } catch (e) {
-            console.error("Failed to parse saved session state", e);
-        }
-    }
 
     // Login Form Listener
     const loginForm = document.getElementById('login-form');
@@ -281,6 +269,17 @@ async function fetchPaper() {
 }
 
 // --- Live Exam Terminal Transition ---
+
+function showLoginView() {
+    if (views.login) {
+        views.login.classList.remove('hidden');
+        views.login.classList.add('active');
+    }
+    if (views.exam) {
+        views.exam.classList.remove('active');
+        views.exam.classList.add('hidden');
+    }
+}
 
 function startExam() {
     views.login.classList.remove('active');
