@@ -1,50 +1,52 @@
 {
   "version": 2,
+  "functions": {
+    "api/index.py": {
+      "runtime": "python3.12"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/index.py"
+    },
+    {
+      "source": "/",
+      "destination": "/admin/dashboard.html"
+    },
+    {
+      "source": "/dashboard",
+      "destination": "/admin/dashboard.html"
+    },
+    {
+      "source": "/dashboard/(.*)",
+      "destination": "/admin/dashboard.html"
   "builds": [
     {
-      "src": "api/index.py",
-      "use": "@vercel/python",
-      "config": {
-        "includeFiles": "backend/**"
-      }
+      "src": "backend/app/main.py",
+      "use": "@vercel/python"
     },
     {
       "src": "admin/**",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "kiosk/**",
       "use": "@vercel/static"
     }
   ],
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "api/index.py"
+      "dest": "backend/app/main.py"
     },
     {
       "src": "/ws/(.*)",
-      "dest": "api/index.py"
+      "dest": "backend/app/main.py"
     },
     {
-      "src": "/dashboard",
-      "dest": "admin/dashboard.html"
-    },
-    {
-      "src": "/kiosk/(.*)",
-      "dest": "kiosk/$1"
-    },
-    {
-      "src": "/kiosk",
-      "dest": "kiosk/index.html"
-    },
-    {
-      "src": "/$",
-      "dest": "admin/dashboard.html"
+      "src": "/admin/(.*)",
+      "dest": "admin/$1"
     },
     {
       "src": "/(.*)",
-      "dest": "admin/$1"
+      "dest": "admin/dashboard.html"
     }
   ]
 }

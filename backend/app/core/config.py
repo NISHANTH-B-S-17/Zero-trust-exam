@@ -1,4 +1,5 @@
 import os
+import tempfile
 
 class Settings:
     PROJECT_NAME: str = "Nivasha Security Engine"
@@ -9,10 +10,10 @@ class Settings:
     
     # Use /tmp for serverless (Vercel) writable environment if needed
     _base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-    _is_vercel = os.environ.get("VERCEL") == "1"
+    _is_vercel = os.environ.get("VERCEL") == "1" or os.environ.get("AWS_LAMBDA_FUNCTION_NAME") is not None
     
-    DB_PATH: str = "/tmp/nivasha.db" if _is_vercel else os.path.join(_base_dir, "data", "nivasha.db")
-    ADMIN_TOKEN_FILE: str = "/tmp/admin_token.txt" if _is_vercel else os.path.join(_base_dir, "admin_token.txt")
+    DB_PATH: str = os.path.join(tempfile.gettempdir(), "nivasha.db") if _is_vercel else os.path.join(_base_dir, "data", "nivasha.db")
+    ADMIN_TOKEN_FILE: str = os.path.join(tempfile.gettempdir(), "admin_token.txt") if _is_vercel else os.path.join(_base_dir, "admin_token.txt")
     
     @property
     def ADMIN_TOKEN(self) -> str:
